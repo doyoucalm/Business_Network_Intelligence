@@ -54,4 +54,4 @@ This project is designed to be an open-source template for BNI chapters worldwid
 MIT License. Feel free to use and adapt for your local chapter.
 
 ---
-*Developed for BNI Mahardika Chapter.*
+*Developed for BNI Mahardika Chapter by **mierakigai**.*
