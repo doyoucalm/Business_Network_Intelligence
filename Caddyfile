@@ -1,0 +1,10 @@
+bnimahardika.qd.je {
+    handle /static/* {
+        root * /srv
+        file_server
+    }
+
+    handle {
+        reverse_proxy app:8000
+    }
+}

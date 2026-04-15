@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — {{ chapter.name }} Hub</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <script src="/static/js/theme-switcher.js"></script>
+    <style>
+        body { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .box { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 3rem; width: 100%; max-width: 450px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        h1 { font-size: 1.6rem; margin-bottom: 0.5rem; }
+        .sub { color: var(--text-muted); margin-bottom: 2.5rem; font-size: 0.95rem; }
+        .form-group { margin-bottom: 1.5rem; }
+        label { display: block; font-size: 0.85rem; margin-bottom: 0.4rem; color: var(--text-muted); font-weight: 600; }
+        input { width: 100%; padding: 0.8rem 1rem; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-main); font-size: 1rem; }
+        input:focus { outline: none; border-color: var(--bni-red); }
+        .btn-login { width: 100%; padding: 0.9rem; font-size: 1.1rem; margin-top: 1rem; }
+        .back { color: var(--bni-red); text-decoration: none; display: inline-block; margin-bottom: 2rem; font-size: 0.9rem; font-weight: 600; }
+        .notice { color: var(--text-muted); font-size: 0.8rem; text-align: center; margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem; }
+        .error { color: var(--bni-red); font-size: 0.85rem; margin-bottom: 1rem; display: none; text-align: center; font-weight: 600; }
+    </style>
+</head>
+<body data-ai-context="general">
+    <div class="box">
+        <a href="/" class="back">← Home</a>
+        <div style="text-align:center; margin-bottom: 1.5rem;">
+            <img src="/static/img/logo.png" alt="BNI Logo" style="height: 40px;">
+        </div>
+        <h1>{{ chapter.name | upper }} <span>HUB</span></h1>
+        <p class="sub">Member Secure Access</p>
+        
+        <div id="login-error" class="error"></div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="email" placeholder="email@member.com" required>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" id="loginBtn" class="btn-primary btn-login">Login to Dashboard</button>
+        </form>
+        <p class="notice">Data ini bersifat rahasia. Akun akan diberikan melalui pengurus Chapter Mahardika.</p>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async e => {
+            e.preventDefault();
+            const btn = document.getElementById('loginBtn');
+            const errorDiv = document.getElementById('login-error');
+            
+            btn.disabled = true;
+            btn.textContent = 'Memverifikasi...';
+            errorDiv.style.display = 'none';
+
+            const payload = {
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value
+            };
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                
+                if (res.ok) {
+                    window.location.href = '/';
+                } else {
+                    errorDiv.textContent = data.detail || 'Email atau password salah';
+                    errorDiv.style.display = 'block';
+                    btn.disabled = false;
+                    btn.textContent = 'Login to Dashboard';
+                }
+            } catch (err) {
+                errorDiv.textContent = 'Gangguan koneksi ke server';
+                errorDiv.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Login to Dashboard';
+            }
+        });
+    </script>
+    <script src="/static/js/ai-assistant.js"></script>
+</body>
+</html>

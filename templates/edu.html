@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ edu.title }} — {{ chapter.name }} Hub</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/theme-switcher.js"></script>
+    <style>
+        body { background-color: var(--bg-color); }
+        html { scroll-snap-type: y mandatory; }
+        .slide { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; text-align: center; scroll-snap-align: start; }
+        .slide h2 { font-size: 2.5rem; margin-bottom: 1.5rem; max-width: 800px; color: var(--text-main); }
+        .slide h2 span { color: var(--bni-red); }
+        .slide p { color: var(--text-muted); font-size: 1.2rem; max-width: 700px; line-height: 1.7; white-space: pre-line; }
+        .big-number { font-size: 6rem; font-weight: 800; color: var(--bni-red); margin: 1rem 0; }
+        .cta { display: inline-block; margin-top: 2.5rem; padding: 1.2rem 3rem; font-size: 1.3rem; text-decoration: none; }
+        .nav-hint { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); color: var(--text-muted); font-size: 0.8rem; animation: bounce 2s infinite; }
+        .back { position: fixed; top: 1.5rem; left: 1.5rem; color: var(--bni-red); text-decoration: none; font-size: 0.9rem; z-index: 10; font-weight: 600; }
+        @keyframes bounce { 0%, 20%, 50%, 80%, 100% {transform: translateY(0) translateX(-50%);} 40% {transform: translateY(-10px) translateX(-50%);} 60% {transform: translateY(-5px) translateX(-50%);} }
+    </style>
+</head>
+<body data-ai-context="edu">
+    <a href="/" class="back">← Kembali ke Hub</a>
+
+    {% for slide in edu.slides %}
+    <section class="slide">
+        {% if slide.type == "title" %}
+            <h2><span>{{ slide.heading }}</span></h2>
+            {% if slide.subtext %}<p>{{ slide.subtext }}</p>{% endif %}
+
+        {% elif slide.type == "stat" %}
+            {% if slide.caption %}<p>{{ slide.caption }}</p>{% endif %}
+            <div class="big-number">{{ slide.number }}</div>
+
+        {% elif slide.type == "text" %}
+            {% if slide.heading %}<h2>{{ slide.heading }}</h2>{% endif %}
+            {% if slide.body %}<p>{{ slide.body }}</p>{% endif %}
+
+        {% elif slide.type == "cta" %}
+            {% if slide.heading %}<h2>{{ slide.heading }}</h2>{% endif %}
+            <a href="{{ slide.button_url }}" class="btn-primary cta">{{ slide.button_text }}</a>
+        {% endif %}
+    </section>
+    {% endfor %}
+
+    <div class="nav-hint">Scroll ke bawah ↓</div>
+    <script src="/static/js/ai-assistant.js"></script>
+</body>
+</html>

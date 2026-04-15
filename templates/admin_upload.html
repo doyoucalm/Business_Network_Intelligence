@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Engine & SOP — {{ chapter.name }} Hub</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <script src="/static/js/theme-switcher.js"></script>
+    <style>
+        body { padding: 2rem; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .back-link { color: var(--bni-red); text-decoration: none; font-weight: 600; }
+        
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+        .card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 2rem; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        h2 { font-size: 1.4rem; margin-bottom: 1.5rem; color: var(--bni-red); display: flex; align-items: center; gap: 10px; }
+        
+        /* SOP Table */
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th { text-align: left; padding: 1rem; border-bottom: 2px solid var(--border-color); font-size: 0.85rem; color: var(--text-muted); }
+        td { padding: 1rem; border-bottom: 1px solid var(--border-color); font-size: 0.9rem; }
+        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+        .overdue { background: #fee2e2; color: #991b1b; }
+        .current { background: #dcfce7; color: #166534; }
+        
+        /* Upload Form */
+        .upload-group { margin-bottom: 1.5rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.9rem; }
+        select, input[type="file"] { width: 100%; padding: 0.8rem; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-main); }
+        .btn-upload { width: 100%; margin-top: 1rem; }
+        
+        .result { margin-top: 1.5rem; padding: 1rem; border-radius: 8px; display: none; font-size: 0.9rem; }
+        .success-res { background: #dcfce7; border: 1px solid #86efac; color: #166534; }
+    </style>
+</head>
+<body data-ai-context="general">
+    <div class="container">
+        <div class="header">
+            <div>
+                <a href="/" class="back-link">← Kembali ke Hub</a>
+                <h1 style="margin-top:0.5rem;">Data Engine & SOP</h1>
+            </div>
+            <div style="text-align: right">
+                <span class="status-badge current">ADMIN ACCESS</span>
+            </div>
+        </div>
+
+        <div class="grid">
+            <!-- SOP Schedule -->
+            <div class="card">
+                <h2>📋 SOP Schedule</h2>
+                <p class="desc" style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1rem;">Jadwal pembaruan data rutin untuk menjaga akurasi sistem.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Task</th>
+                            <th>Frequency</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in sop_status %}
+                        <tr>
+                            <td>
+                                <strong>{{ item.task }}</strong><br>
+                                <span style="font-size:0.7rem; color:var(--text-muted)">PIC: {{ item.role }}</span>
+                            </td>
+                            <td>{{ item.frequency }}</td>
+                            <td>
+                                {% if item.is_overdue %}
+                                <span class="status-badge overdue">OVERDUE</span>
+                                {% else %}
+                                <span class="status-badge current">UPDATED</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Upload Engine -->
+            <div class="card">
+                <h2>🚀 Bulk Upload Engine</h2>
+                <form id="uploadForm">
+                    <div class="upload-group">
+                        <label>Tipe Data</label>
+                        <select id="data_type" required>
+                            <option value="roster">BNI Connect Roster (Excel)</option>
+                            <option value="palms">PALMS Summary (Excel)</option>
+                            <option value="visitor">Visitor Report (Excel)</option>
+                        </select>
+                    </div>
+                    <div class="upload-group">
+                        <label>Pilih File Excel</label>
+                        <input type="file" id="file" accept=".xlsx, .xls" required>
+                    </div>
+                    <button type="submit" id="uploadBtn" class="btn-primary btn-upload">Proses & Sinkronisasi</button>
+                </form>
+
+                <div id="uploadResult" class="result"></div>
+                
+                <div style="margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+                    <h3>☁️ Google Drive Sync</h3>
+                    <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1rem;">Otomatisasi pengambilan data langsung dari Google Sheet atau Drive folder.</p>
+                    <button disabled class="btn-primary" style="background:#4285F4; opacity:0.6; cursor:not-allowed">Coming Soon: Connect Google Drive</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async e => {
+            e.preventDefault();
+            const btn = document.getElementById('uploadBtn');
+            const resDiv = document.getElementById('uploadResult');
+            const fileInput = document.getElementById('file');
+            const dataType = document.getElementById('data_type').value;
+
+            if (!fileInput.files[0]) return;
+
+            btn.disabled = true;
+            btn.textContent = 'Memproses Data...';
+            resDiv.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('data_type', dataType);
+
+            try {
+                const res = await fetch('/api/admin/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    resDiv.className = 'result success-res';
+                    resDiv.innerHTML = `<strong>Berhasil!</strong><br>Added: ${data.summary.added}, Updated: ${data.summary.updated}`;
+                    resDiv.style.display = 'block';
+                    setTimeout(() => window.location.reload(), 3000);
+                } else {
+                    alert('Error: ' + data.detail);
+                    btn.disabled = false;
+                    btn.textContent = 'Proses & Sinkronisasi';
+                }
+            } catch (err) {
+                alert('Gangguan koneksi');
+                btn.disabled = false;
+                btn.textContent = 'Proses & Sinkronisasi';
+            }
+        });
+    </script>
+    <script src="/static/js/ai-assistant.js"></script>
+</body>
+</html>
