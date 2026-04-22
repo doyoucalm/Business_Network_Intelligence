@@ -9,6 +9,7 @@ from .ai import chat_with_ai
 from .auth import verify_password, create_access_token, get_current_user, require_auth, ACCESS_TOKEN_EXPIRE_MINUTES, is_admin
 from .data_engine import process_roster_excel, process_palms_excel, process_visitor_excel, get_sop_status
 from .traffic_light import calculate_all_traffic_lights
+from .routes_meeting import meetings_page, create_meeting_api, attendance_page, save_attendance_api
 import os
 from datetime import datetime, timedelta
 from typing import Optional, List
@@ -16,6 +17,12 @@ from typing import Optional, List
 app = FastAPI(title="Mahardika Hub")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+
+# Meeting routes
+app.get("/admin/meetings")(meetings_page)
+app.post("/api/admin/meetings")(create_meeting_api)
+app.get("/admin/meetings/{meeting_id}/attendance")(attendance_page)
+app.post("/api/admin/attendance")(save_attendance_api)
 
 # ============================================
 # PAGES

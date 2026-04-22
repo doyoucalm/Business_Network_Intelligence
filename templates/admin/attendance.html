@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presensi {{ meeting.meeting_date }}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body { margin: 0; padding: 0; font-family: sans-serif; padding-top: 130px; background: #f0f2f5; }
+        .sticky-header {
+            position: fixed; top: 0; left: 0; right: 0;
+            background: var(--bni-red, #cf202e); color: white;
+            padding: 1rem; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .sticky-header h2 { margin: 0; font-size: 1.2rem; }
+        .sticky-header p { margin: 5px 0 0; font-size: 0.9rem; opacity: 0.9; }
+        
+        .summary-bar {
+            position: fixed; top: 80px; left: 0; right: 0;
+            background: white; border-bottom: 1px solid #ddd;
+            padding: 0.5rem 1rem; display: flex; justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem; font-weight: bold; z-index: 99;
+        }
+        .search-container { padding: 0.8rem 1rem; }
+        #memberSearch {
+            width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; box-sizing: border-box;
+        }
+        
+        .member-list { padding: 0 1rem 2rem; }
+        .member-card {
+            background: white; border-radius: 12px; padding: 1rem; margin-bottom: 1rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .member-name { font-weight: bold; margin-bottom: 0.8rem; font-size: 1rem; color: #333; }
+        
+        .toggle-group { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+        .toggle-btn {
+            border: 1px solid #ddd; background: white; padding: 0.8rem 0;
+            border-radius: 6px; font-weight: bold; font-size: 0.9rem; cursor: pointer;
+            transition: all 0.2s; color: #666;
+        }
+        
+        .toggle-btn.active.P { background: #28a745; color: white; border-color: #28a745; }
+        .toggle-btn.active.A { background: #dc3545; color: white; border-color: #dc3545; }
+        .toggle-btn.active.S { background: #ffc107; color: black; border-color: #ffc107; }
+        .toggle-btn.active.M { background: #17a2b8; color: white; border-color: #17a2b8; }
+        .toggle-btn.active.L { background: #6c757d; color: white; border-color: #6c757d; }
+        
+        #toast {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: #333; color: white; padding: 0.8rem 1.5rem;
+            border-radius: 30px; font-size: 0.9rem; display: none; z-index: 1000;
+        }
+        .back-btn { position: absolute; left: 1rem; top: 1.2rem; color: white; text-decoration: none; font-size: 1.2rem; }
+        .header-content { margin-left: 2rem; }
+    </style>
+</head>
+<body>
+    <div class="sticky-header">
+        <a href="/admin/meetings" class="back-btn">&larr;</a>
+        <div class="header-content">
+            <h2>{{ meeting.meeting_date }}</h2>
+            <p>{{ meeting.meta.get('theme', 'Regular Meeting') }}</p>
+        </div>
+    </div>
+    
+    <div class="summary-bar" id="summaryBar">
+        <div>P:<span id="count-P">0</span> A:<span id="count-A">0</span> S:<span id="count-S">0</span> M:<span id="count-M">0</span> L:<span id="count-L">0</span></div>
+        <div><span id="recorded-count">0</span>/{{ members|length }}</div>
+    </div>
+    
+    <div class="search-container">
+        <input type="text" id="memberSearch" placeholder="Cari nama member..." onkeyup="filterMembers()">
+    </div>
+    
+    <div class="member-list" id="memberList">
+        {% for m in members %}
+        <div class="member-card" data-name="{{ m.full_name.lower() }}">
+            <div class="member-name">{{ m.full_name }}</div>
+            <div class="toggle-group" data-member-id="{{ m.id }}">
+                {% set current_status = attendance_map.get(m.id|string, '') %}
+                <button class="toggle-btn P {{ 'active' if current_status == 'P' else '' }}" onclick="toggleAttendance('{{ m.id }}', 'P', this)">P</button>
+                <button class="toggle-btn A {{ 'active' if current_status == 'A' else '' }}" onclick="toggleAttendance('{{ m.id }}', 'A', this)">A</button>
+                <button class="toggle-btn S {{ 'active' if current_status == 'S' else '' }}" onclick="toggleAttendance('{{ m.id }}', 'S', this)">S</button>
+                <button class="toggle-btn M {{ 'active' if current_status == 'M' else '' }}" onclick="toggleAttendance('{{ m.id }}', 'M', this)">M</button>
+                <button class="toggle-btn L {{ 'active' if current_status == 'L' else '' }}" onclick="toggleAttendance('{{ m.id }}', 'L', this)">L</button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div id="toast">Saved</div>
+
+    <script>
+        function filterMembers() {
+            const query = document.getElementById('memberSearch').value.toLowerCase();
+            const cards = document.querySelectorAll('.member-card');
+            cards.forEach(card => {
+                if (card.dataset.name.includes(query)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        async function toggleAttendance(memberId, status, btn) {
+            const group = btn.parentElement;
+            const isAlreadyActive = btn.classList.contains('active');
+            const newStatus = isAlreadyActive ? '' : status;
+            
+            // Optimistic update
+            group.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+            if (!isAlreadyActive) {
+                btn.classList.add('active');
+            }
+            
+            try {
+                const res = await fetch('/api/admin/attendance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        meeting_id: '{{ meeting.id }}',
+                        member_id: memberId,
+                        status: newStatus
+                    })
+                });
+                
+                if (res.ok) {
+                    showToast();
+                    updateSummary();
+                } else {
+                    alert('Gagal menyimpan');
+                    // Revert UI? 
+                }
+            } catch (err) {
+                alert('Error: ' + err.message);
+            }
+        }
+
+        function showToast() {
+            const toast = document.getElementById('toast');
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 1000);
+        }
+
+        function updateSummary() {
+            const counts = { P: 0, A: 0, S: 0, M: 0, L: 0 };
+            const activeBtns = document.querySelectorAll('.toggle-btn.active');
+            activeBtns.forEach(btn => {
+                if (btn.classList.contains('P')) counts.P++;
+                else if (btn.classList.contains('A')) counts.A++;
+                else if (btn.classList.contains('S')) counts.S++;
+                else if (btn.classList.contains('M')) counts.M++;
+                else if (btn.classList.contains('L')) counts.L++;
+            });
+            
+            document.getElementById('count-P').innerText = counts.P;
+            document.getElementById('count-A').innerText = counts.A;
+            document.getElementById('count-S').innerText = counts.S;
+            document.getElementById('count-M').innerText = counts.M;
+            document.getElementById('count-L').innerText = counts.L;
+            document.getElementById('recorded-count').innerText = activeBtns.length;
+        }
+
+        // Initial summary
+        updateSummary();
+    </script>
+</body>
+</html>
