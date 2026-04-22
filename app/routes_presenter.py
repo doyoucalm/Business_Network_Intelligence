@@ -21,10 +21,14 @@ def get_present_members(meeting_id: str, db: Session):
     present_ids = [a.member_id for a in attendance]
     if not present_ids:
         return []
+
     members = db.query(Member).filter(Member.id.in_(present_ids)).all()
+    if not members:
+        return []
 
     # Attach presentation and traffic light to each member
-    all_tl = calculate_all_traffic_lights(db, members[0].chapter_id if members else None)
+    chapter_id = members[0].chapter_id
+    all_tl = calculate_all_traffic_lights(db, chapter_id)
     tl_map = {str(m["member_id"]): m for m in all_tl}
 
     for m in members:
