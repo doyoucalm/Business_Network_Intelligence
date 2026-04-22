@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LT Assignment - {{ chapter.name }}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body { padding: 2rem; max-width: 900px; margin: 0 auto; font-family: sans-serif; }
+        .term-header { background: var(--bni-red); color: white; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .term-header h1 { margin: 0; font-size: 1.5rem; }
+        .roles-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1.5rem; }
+        .role-card { background: white; border: 1px solid #ddd; border-radius: 10px; padding: 1.2rem; display: flex; align-items: center; gap: 1rem; }
+        .role-photo { width: 80px; height: 80px; border-radius: 50%; background: #eee; border: 2px solid #ddd; flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .role-photo img { width: 100%; height: 100%; object-fit: cover; }
+        .role-info { flex-grow: 1; }
+        .role-title { font-weight: bold; color: var(--bni-red); font-size: 1rem; margin-bottom: 0.5rem; }
+        select { width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid #ccc; }
+        .save-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 1rem; border-top: 1px solid #ddd; text-align: center; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); }
+        .btn-save { background: var(--bni-red); color: white; border: none; padding: 0.8rem 3rem; border-radius: 50px; font-weight: bold; cursor: pointer; font-size: 1rem; }
+    </style>
+</head>
+<body>
+    <div style="margin-bottom: 1rem;">
+        <a href="/" style="text-decoration: none; color: #666;">&larr; Kembali ke Home</a>
+    </div>
+
+    <div class="term-header">
+        <div>
+            <p style="margin: 0; opacity: 0.8; font-size: 0.9rem;">Leadership Team Assignment</p>
+            <h1>Term {{ current_term }}</h1>
+        </div>
+        <div style="font-weight: bold; border: 2px solid white; padding: 5px 15px; border-radius: 5px;">ACTIVE</div>
+    </div>
+
+    <div class="roles-grid" id="rolesGrid">
+        {% for role in lt_roles %}
+        <div class="role-card">
+            <div class="role-photo" id="photo-{{ role|replace(' ', '-') }}">
+                <span style="color: #999; font-size: 1.5rem;">?</span>
+            </div>
+            <div class="role-info">
+                <div class="role-title">{{ role }}</div>
+                <select class="role-select" data-role="{{ role }}" onchange="updatePhoto('{{ role|replace(' ', '-') }}', this)">
+                    <option value="">-- Kosong --</option>
+                    {% for m in members %}
+                    <option value="{{ m.id }}" {{ 'selected' if role_map.get(role) == m.id|string else '' }} data-photo="{{ m.photo_url or '' }}">
+                        {{ m.full_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div style="height: 100px;"></div>
+
+    <div class="save-bar">
+        <button class="btn-save" onclick="saveRoles()">SIMPAN PERUBAHAN</button>
+    </div>
+
+    <script>
+        function updatePhoto(roleId, select) {
+            const container = document.getElementById('photo-' + roleId);
+            const selectedOption = select.options[select.selectedIndex];
+            const photoUrl = selectedOption.dataset.photo;
+            
+            if (photoUrl) {
+                container.innerHTML = `<img src="${photoUrl}" alt="Photo">`;
+            } else {
+                container.innerHTML = `<span style="color: #999; font-size: 1.5rem;">?</span>`;
+            }
+        }
+
+        async function saveRoles() {
+            const selects = document.querySelectorAll('.role-select');
+            const data = Array.from(selects).map(s => ({
+                role: s.dataset.role,
+                member_id: s.value || null
+            }));
+
+            try {
+                const res = await fetch('/api/admin/roles', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (res.ok) {
+                    alert('Roles berhasil disimpan');
+                    location.reload();
+                } else {
+                    alert('Gagal menyimpan roles');
+                }
+            } catch (err) {
+                alert('Error: ' + err.message);
+            }
+        }
+
+        // Initialize photos
+        document.querySelectorAll('.role-select').forEach(s => {
+            const roleId = s.dataset.role.replace(/ /g, '-');
+            updatePhoto(roleId, s);
+        });
+    </script>
+</body>
+</html>

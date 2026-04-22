@@ -10,6 +10,7 @@ from .auth import verify_password, create_access_token, get_current_user, requir
 from .data_engine import process_roster_excel, process_palms_excel, process_visitor_excel, get_sop_status
 from .traffic_light import calculate_all_traffic_lights
 from .routes_meeting import meetings_page, create_meeting_api, attendance_page, save_attendance_api
+from .routes_roles import roles_page, assign_roles_api
 import os
 from datetime import datetime, timedelta
 from typing import Optional, List
@@ -23,6 +24,8 @@ app.get("/admin/meetings")(meetings_page)
 app.post("/api/admin/meetings")(create_meeting_api)
 app.get("/admin/meetings/{meeting_id}/attendance")(attendance_page)
 app.post("/api/admin/attendance")(save_attendance_api)
+app.get("/admin/roles")(roles_page)
+app.post("/api/admin/roles")(assign_roles_api)
 
 # ============================================
 # PAGES
