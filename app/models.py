@@ -18,7 +18,7 @@ class Chapter(Base):
     meeting_time = Column(String(10))
     venue = Column(Text)
     status = Column(String(20), default="active")
-    settings = Column(JSONB, default={}) # Reconciled with DB
+    settings = Column(JSONB, default={})
     created_at = Column(DateTime, default=datetime.utcnow)
     
     members = relationship("Member", back_populates="chapter")
@@ -31,11 +31,10 @@ class Member(Base):
     full_name = Column(String(150), nullable=False)
     email = Column(String(150), unique=True, nullable=True)
     phone = Column(String(20))
-    # Post-migration names
     classification = Column(String(150))
     company = Column(String(200))
     membership_status = Column(String(20), default="active")
-    role = Column(String(20), default="member") # Legacy column, to be migrated to MemberRole
+    role = Column(String(20), default="member") 
     join_date = Column(Date)
     renewal_date = Column(Date)
     password_hash = Column(String(255))
@@ -112,9 +111,14 @@ class Meeting(Base):
     chapter_id = Column(UUID(as_uuid=True), ForeignKey("chapters.id"), nullable=False)
     meeting_date = Column(Date, nullable=False)
     meeting_type = Column(String(20), default="weekly")
+    current_slide_index = Column(Integer, default=0)
+    status = Column(String(20), default="scheduled")
     is_locked = Column(Boolean, default=False)
     meta = Column(JSONB, default={})
     created_at = Column(DateTime, default=datetime.utcnow)
+    
+    chapter = relationship("Chapter")
+    attendance = relationship("Attendance", back_populates="meeting")
 
 class Attendance(Base):
     __tablename__ = "attendance"
@@ -124,6 +128,9 @@ class Attendance(Base):
     status = Column(String(20), nullable=False)
     meta = Column(JSONB, default={})
     recorded_at = Column(DateTime, default=datetime.utcnow)
+    
+    meeting = relationship("Meeting", back_populates="attendance")
+    member = relationship("Member")
 
 class PalmsSnapshot(Base):
     __tablename__ = "palms_snapshots"
@@ -148,6 +155,9 @@ class PalmsSnapshot(Base):
     raw_data = Column(JSONB, default={})
     import_id = Column(UUID(as_uuid=True))
     created_at = Column(DateTime, default=datetime.utcnow)
+    
+    chapter = relationship("Chapter")
+    member = relationship("Member")
 
 class PowerTeam(Base):
     __tablename__ = "power_teams"
@@ -193,6 +203,10 @@ class Sponsorship(Base):
     status = Column(String(20), default="active")
     raw_data = Column(JSONB, default={})
     created_at = Column(DateTime, default=datetime.utcnow)
+    
+    chapter = relationship("Chapter")
+    sponsor = relationship("Member", foreign_keys=[sponsor_id])
+    sponsored_member = relationship("Member", foreign_keys=[sponsored_member_id])
 
 class DataImport(Base):
     __tablename__ = "data_imports"
@@ -212,18 +226,8 @@ class DataImport(Base):
     imported_by = Column(String(100))
     created_at = Column(DateTime, default=datetime.utcnow)
     completed_at = Column(DateTime)
-
-class UploadedFile(Base):
-    __tablename__ = "uploaded_files"
-    id = Column(UUID(as_uuid=True), primary_key=True, default=gen_uuid)
-    filename = Column(String(255), nullable=False)
-    file_type = Column(String(50))
-    uploaded_by = Column(UUID(as_uuid=True), nullable=True)
-    status = Column(String(20), default="pending")
-    row_count = Column(Integer)
-    parsed_data = Column(JSONB, default={})
-    import_log = Column(JSONB, default={})
-    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    chapter = relationship("Chapter")
 
 class Score(Base):
     __tablename__ = "scores"
@@ -245,6 +249,8 @@ class ActivityLog(Base):
     target_id = Column(UUID(as_uuid=True))
     data = Column(JSONB, default={})
     created_at = Column(DateTime, default=datetime.utcnow)
+    
+    actor = relationship("Member")
 
 class Announcement(Base):
     __tablename__ = "announcements"
@@ -259,5 +265,157 @@ class Announcement(Base):
     expire_date = Column(Date)
     is_active = Column(Boolean, default=True)
     created_by = Column(UUID(as_uuid=True), ForeignKey("members.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    chapter = relationship("Chapter")
+    meeting = relationship("Meeting")
+    author = relationship("Member", foreign_keys=[created_by])
+
+class UploadedFile(Base):
+    __tablename__ = "uploaded_files"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=gen_uuid)
+    filename = Column(String(255), nullable=False)
+    file_type = Column(String(50))
+    uploaded_by = Column(UUID(as_uuid=True), nullable=True)
+    status = Column(String(20), default="pending")
+    row_count = Column(Integer)
+    parsed_data = Column(JSONB, default={})
+    import_log = Column(JSONB, default={})
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+# RESTORING THE DROPPED TABLES
+class ChapterContent(Base):
+    __tablename__ = "chapter_content"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=gen_uuid)
+    chapter_id = Column(UUID(as_uuid=True), ForeignKey("chapters.id"), nullable=False)
+    content_type = Column(String(50), nullable=False)
+    title = Column(String(255))
+    content = Column(JSONB, default={})
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class ChapterTarget(Base):
+    __tablename__ = "chapter_targets"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=gen_uuid)
+    chapter_id = Column(UUID(as_uuid=True), ForeignKey("chapters.id"), nullable=False)
+    period_label = Column(String(50), nullable=False)
+    period_start = Column(Date, nullable=False)
+    period_end = Column(Date, nullable=False)
+    metric = Column(String(50), nullable=False)
+    target_value = Column(Numeric(15, 2), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class ReferralNeed(Base):
+    __tablename__ = "referral_needs"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=gen_uuid)
+    member_id = Column(UUID(as_uuid=True), ForeignKey("members.id"), nullable=False)
+    target_description = Column(String(255), nullable=False)
+    priority = Column(Integer, default=1)
+    status = Column(String(20), default="active")
+    version = Column(Integer, default=1)
+    fulfilled_date = Column(Date)
+    notes = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class MemberAchievement(Base):
+    __tablename__ = "member_achievements"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=gen_uuid)
+    chapter_id = Column(UUID(as_uuid=True), ForeignKey("chapters.id"), nullable=False)
+    member_id = Column(UUID(as_uuid=True), ForeignKey("members.id"), nullable=False)
+    achievement_type = Column(String(30), nullable=False)
+    title = Column(String(150))
+    description = Column(Text)
+    criteria_snapshot = Column(JSONB, default={})
+    achieved_at = Column(Date)
+    announced_at = Column(DateTime)
+    announced_meeting_id = Column(UUID(as_uuid=True))
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class MemberPresentation(Base):
+    __tablename__ = "member_presentations"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=gen_uuid)
+    member_id = Column(UUID(as_uuid=True), ForeignKey("members.id"), nullable=False)
+    version = Column(Integer, nullable=False)
+    title = Column(String(255))
+    focus_product = Column(String(255))
+    description = Column(Text)
+    products_services = Column(JSONB, default=[])
+    looking_for = Column(JSONB, default=[])
+    product_images = Column(JSONB, default=[])
+    is_active = Column(Boolean, default=True)
+    rotation_order = Column(Integer)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class MeetingActivity(Base):
+    __tablename__ = "meeting_activity"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=gen_uuid)
+    meeting_id = Column(UUID(as_uuid=True), ForeignKey("meetings.id"), nullable=False)
+    member_id = Column(UUID(as_uuid=True), ForeignKey("members.id"), nullable=False)
+    referrals_given = Column(Integer, default=0)
+    referrals_received = Column(Integer, default=0)
+    referrals_outside = Column(Integer, default=0)
+    tyfcb_amount = Column(Numeric(15, 2), default=0)
+    one_to_ones = Column(Integer, default=0)
+    visitors_brought = Column(Integer, default=0)
+    ceu_credits = Column(Integer, default=0)
+    testimonials_given = Column(Integer, default=0)
+    notes = Column(Text)
+    source = Column(String(30), default="manual")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class CSMMeeting(Base):
+    __tablename__ = "csm_meetings"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=gen_uuid)
+    chapter_id = Column(UUID(as_uuid=True), ForeignKey("chapters.id"), nullable=False)
+    date = Column(Date, nullable=False)
+    location = Column(String(255))
+    attendees = Column(JSONB, default=[])
+    agenda = Column(JSONB, default=[])
+    vp_report = Column(JSONB, default={})
+    visitor_report = Column(JSONB, default={})
+    mc_report = Column(JSONB, default={})
+    education_report = Column(JSONB, default={})
+    mentor_report = Column(JSONB, default={})
+    event_report = Column(JSONB, default={})
+    notes = Column(Text)
+    next_meeting_date = Column(Date)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class ActionItem(Base):
+    __tablename__ = "action_items"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=gen_uuid)
+    csm_meeting_id = Column(UUID(as_uuid=True), ForeignKey("csm_meetings.id"), nullable=False)
+    chapter_id = Column(UUID(as_uuid=True), ForeignKey("chapters.id"), nullable=False)
+    description = Column(Text, nullable=False)
+    assigned_to_member_id = Column(UUID(as_uuid=True), ForeignKey("members.id"))
+    assigned_to_name = Column(String(150))
+    due_date = Column(Date)
+    status = Column(String(20), default="open")
+    completed_date = Column(Date)
+    notes = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class MemberReview(Base):
+    __tablename__ = "member_reviews"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=gen_uuid)
+    chapter_id = Column(UUID(as_uuid=True), ForeignKey("chapters.id"), nullable=False)
+    member_id = Column(UUID(as_uuid=True), ForeignKey("members.id"), nullable=False)
+    review_cycle = Column(Integer, nullable=False, default=1)
+    scheduled_date = Column(Date)
+    actual_date = Column(Date)
+    pic_member_id = Column(UUID(as_uuid=True), ForeignKey("members.id"))
+    score_percentage = Column(Integer)
+    keterangan = Column(Text)
+    solusi = Column(Text)
+    status = Column(String(20), default="scheduled")
+    decision = Column(String(20))
+    raw_data = Column(JSONB, default={})
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

@@ -72,3 +72,11 @@ async def require_auth(user: Optional[Member] = Depends(get_current_user)):
             headers={"Location": "/login"},
         )
     return user
+
+def is_admin(member: Member, db: Session) -> bool:
+    from .models import MemberRole
+    return db.query(MemberRole).filter(
+        MemberRole.member_id == member.id,
+        MemberRole.role == "admin",
+        MemberRole.is_active == True,
+    ).first() is not None

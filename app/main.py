@@ -4,10 +4,11 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session
 from .database import engine, Base, get_db
-from .models import Chapter, Member, FormTemplate, FormResponse, EduContent, ActivityLog
+from .models import Chapter, Member, FormTemplate, FormResponse, EduContent, ActivityLog, Meeting, Attendance
 from .ai import chat_with_ai
-from .auth import verify_password, create_access_token, get_current_user, require_auth, ACCESS_TOKEN_EXPIRE_MINUTES
+from .auth import verify_password, create_access_token, get_current_user, require_auth, ACCESS_TOKEN_EXPIRE_MINUTES, is_admin
 from .data_engine import process_roster_excel, process_palms_excel, process_visitor_excel, get_sop_status
+import os
 from datetime import datetime, timedelta
 from typing import Optional, List
 
@@ -46,6 +47,64 @@ async def edu_page(slug: str, request: Request, db: Session = Depends(get_db), u
         request=request, name="edu.html", context={"edu": edu, "chapter": chapter, "user": user}
     )
 
+@app.get("/members")
+async def members_directory(request: Request, db: Session = Depends(get_db), user: Member = Depends(require_auth)):
+    chapter = db.query(Chapter).first()
+    members = db.query(Member).filter_by(membership_status="active").order_by(Member.full_name).all()
+    return templates.TemplateResponse(
+        request=request, name="members.html", context={"chapter": chapter, "members": members, "user": user}
+    )
+
+@app.get("/presenter/{meeting_id}")
+async def presenter_view(meeting_id: str, request: Request, db: Session = Depends(get_db), user: Member = Depends(require_auth)):
+    meeting = db.query(Meeting).filter_by(id=meeting_id).first()
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Meeting tidak ditemukan")
+    
+    chapter = db.query(Chapter).first()
+    chapter_settings = chapter.settings or {}
+    slides_config = chapter_settings.get("wm_slides_config", {})
+
+    context = {
+        "chapter": chapter,
+        "meeting": meeting,
+        "user": user,
+        "slides_config": slides_config,
+        "is_admin": is_admin(user, db)
+    }
+    return templates.TemplateResponse(
+        request=request, name="wm/presenter.html", context=context
+    )
+
+@app.get("/api/presenter/{meeting_id}/state")
+async def get_presenter_state(meeting_id: str, db: Session = Depends(get_db)):
+    meeting = db.query(Meeting).filter_by(id=meeting_id).first()
+    if not meeting:
+        return {"error": "not_found"}
+    return {
+        "current_slide_index": meeting.current_slide_index,
+        "status": meeting.status,
+        "is_locked": meeting.is_locked
+    }
+
+@app.post("/api/presenter/{meeting_id}/state")
+async def update_presenter_state(meeting_id: str, request: Request, db: Session = Depends(get_db), user: Member = Depends(require_auth)):
+    if not is_admin(user, db):
+        raise HTTPException(status_code=403)
+    
+    data = await request.json()
+    meeting = db.query(Meeting).filter_by(id=meeting_id).first()
+    if not meeting:
+        raise HTTPException(status_code=404)
+    
+    if "current_slide_index" in data:
+        meeting.current_slide_index = data["current_slide_index"]
+    if "status" in data:
+        meeting.status = data["status"]
+    
+    db.commit()
+    return {"status": "ok"}
+
 @app.get("/login")
 async def login_page(request: Request, db: Session = Depends(get_db), user: Optional[Member] = Depends(get_current_user)):
     if user:
@@ -57,7 +116,7 @@ async def login_page(request: Request, db: Session = Depends(get_db), user: Opti
 
 @app.get("/admin/upload")
 async def admin_upload_page(request: Request, db: Session = Depends(get_db), user: Member = Depends(require_auth)):
-    if user.role != "admin":
+    if not is_admin(user, db):
         return RedirectResponse(url="/")
     chapter = db.query(Chapter).first()
     sop_status = get_sop_status(db)
@@ -98,7 +157,7 @@ async def wm_slides_page(date: str, request: Request, db: Session = Depends(get_
 
 @app.post("/api/admin/wm-slides")
 async def save_wm_slides_config(request: Request, db: Session = Depends(get_db), user: Member = Depends(require_auth)):
-    if user.role != "admin":
+    if not is_admin(user, db):
         raise HTTPException(status_code=403, detail="Akses ditolak")
     
     data = await request.json()
@@ -164,7 +223,7 @@ async def admin_upload(
     db: Session = Depends(get_db), 
     user: Member = Depends(require_auth)
 ):
-    if user.role != "admin":
+    if not is_admin(user, db):
         raise HTTPException(status_code=403, detail="Akses ditolak")
     
     chapter = db.query(Chapter).first()
@@ -245,8 +304,8 @@ async def health(db: Session = Depends(get_db)):
     }
 
 @app.post("/api/admin/debug-upload")
-async def debug_upload(file: UploadFile = File(...), user: Member = Depends(require_auth)):
-    if user.role != "admin":
+async def debug_upload(db: Session = Depends(get_db), file: UploadFile = File(...), user: Member = Depends(require_auth)):
+    if not is_admin(user, db):
         raise HTTPException(status_code=403, detail="Akses ditolak")
     os.makedirs("static/uploads/debug", exist_ok=True)
     filepath = f"static/uploads/debug/{file.filename}"
@@ -260,8 +319,8 @@ async def debug_upload_get():
     return {"error": "You sent a GET request, but this endpoint requires a POST with a file."}
 
 @app.get("/api/admin/debug-list")
-async def debug_list(user: Member = Depends(require_auth)):
-    if user.role != "admin":
+async def debug_list(db: Session = Depends(get_db), user: Member = Depends(require_auth)):
+    if not is_admin(user, db):
         raise HTTPException(status_code=403, detail="Akses ditolak")
     # List files in the debug directory to confirm they are there
     path = "static/uploads/debug"
@@ -270,8 +329,8 @@ async def debug_list(user: Member = Depends(require_auth)):
     return {"files": os.listdir(path)}
 
 @app.get("/api/admin/debug-clear")
-async def debug_clear(user: Member = Depends(require_auth)):
-    if user.role != "admin":
+async def debug_clear(db: Session = Depends(get_db), user: Member = Depends(require_auth)):
+    if not is_admin(user, db):
         raise HTTPException(status_code=403, detail="Akses ditolak")
     # Delete all files in the debug directory
     path = "static/uploads/debug"
