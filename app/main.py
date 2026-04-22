@@ -12,6 +12,7 @@ from .traffic_light import calculate_all_traffic_lights
 from .routes_meeting import meetings_page, create_meeting_api, attendance_page, save_attendance_api
 from .routes_roles import roles_page, assign_roles_api
 from .routes_cards import cards_list_page, card_editor_page, save_card_api, upload_image_api
+from .routes_presenter import presenter_view
 import os
 from datetime import datetime, timedelta
 from typing import Optional, List
@@ -31,6 +32,7 @@ app.get("/admin/cards")(cards_list_page)
 app.get("/admin/cards/{member_id}")(card_editor_page)
 app.post("/api/admin/cards/{member_id}")(save_card_api)
 app.post("/api/admin/upload/image/{member_id}")(upload_image_api)
+app.get("/presenter/{meeting_id}")(presenter_view)
 
 # ============================================
 # PAGES
