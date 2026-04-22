@@ -218,35 +218,40 @@ async def logout():
 
 @app.post("/api/admin/upload")
 async def admin_upload(
-    file: UploadFile = File(...), 
+    file: UploadFile = File(...),
     data_type: str = Form(...),
-    db: Session = Depends(get_db), 
+    db: Session = Depends(get_db),
     user: Member = Depends(require_auth)
 ):
     if not is_admin(user, db):
         raise HTTPException(status_code=403, detail="Akses ditolak")
-    
+
     chapter = db.query(Chapter).first()
     content = await file.read()
-    
-    summary = {}
+
     if data_type == "roster":
         summary = process_roster_excel(content, chapter.id, db)
-        # Log activity
-        log = ActivityLog(
-            chapter_id=chapter.id,
-            actor_id=user.id,
-            action="upload_roster_sync",
-            target_type="member",
-            data={"summary": summary, "filename": file.filename}
-        )
-        db.add(log)
-        db.commit()
+        action = "upload_roster_sync"
+    elif data_type == "palms":
+        summary = process_palms_excel(content, chapter.id, db)
+        action = "upload_palms_import"
+    elif data_type == "visitor":
+        summary = process_visitor_excel(content, chapter.id, db)
+        action = "upload_visitor_report"
     else:
-        # Placeholder for other types
-        return JSONResponse({"detail": f"Tipe data {data_type} segera hadir"}, status_code=400)
+        return JSONResponse({"detail": f"Tipe data '{data_type}' tidak dikenal. Gunakan: roster, palms, visitor"}, status_code=400)
 
-    return {"status": "ok", "summary": summary}
+    log = ActivityLog(
+        chapter_id=chapter.id,
+        actor_id=user.id,
+        action=action,
+        target_type=data_type,
+        data={"summary": summary, "filename": file.filename}
+    )
+    db.add(log)
+    db.commit()
+
+    return {"status": "ok", "data_type": data_type, "summary": summary}
 
 @app.post("/api/form/{slug}")
 async def submit_form(slug: str, request: Request, db: Session = Depends(get_db), user: Member = Depends(require_auth)):

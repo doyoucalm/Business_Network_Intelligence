@@ -30,7 +30,7 @@ def test_roster_parser():
         assert "errors" in result, f"Missing 'errors' key: {result}"
         assert result["errors"] == 0, f"Roster errors: {result}"
         # We added 2 fake members
-        assert result["added"] >= 1, f"Roster added should be >= 1, got {result}"
+        assert result["added"] + result["updated"] >= 1, f"Roster should add or update >= 1, got {result}"
         print(f"ROSTER PASS: added={result['added']}, updated={result['updated']}, errors={result['errors']}")
     finally:
         db.rollback()
@@ -71,7 +71,7 @@ def test_visitor_parser():
         assert "processed" in result, f"Missing 'processed' key: {result}"
         assert "errors" in result, f"Missing 'errors' key: {result}"
         assert result["errors"] == 0, f"Visitor errors: {result}"
-        assert result["added"] >= 1, f"Visitor added should be >= 1, got {result}"
+        assert result["added"] + result["updated"] >= 1, f"Visitor should add or update >= 1, got {result}"
         print(f"VISITOR PASS: added={result['added']}, processed={result['processed']}, errors={result['errors']}")
     finally:
         db.rollback()

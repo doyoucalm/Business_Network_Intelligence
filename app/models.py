@@ -139,22 +139,40 @@ class PalmsSnapshot(Base):
     period_label = Column(String(50))
     period_start = Column(Date)
     period_end = Column(Date)
+
+    # Attendance
     present_count = Column(Integer, default=0)
     absent_count = Column(Integer, default=0)
-    medical_count = Column(Integer, default=0)
     late_count = Column(Integer, default=0)
+    medical_count = Column(Integer, default=0)
     substitute_count = Column(Integer, default=0)
-    referrals_given = Column(Integer, default=0)
-    referrals_received = Column(Integer, default=0)
-    referrals_outside = Column(Integer, default=0)
+
+    # Referrals — Individual (from BNI report columns)
+    rgi = Column(Integer, default=0)                    # Referrals Given Inside
+    rgo = Column(Integer, default=0)                  # Referrals Given Outside
+    rri = Column(Integer, default=0)                  # Referrals Received Inside
+    rro = Column(Integer, default=0)                  # Referrals Received Outside
+
+    # Referrals — Totals (computed on import)
+    referrals_given_total = Column(Integer, default=0)    # RGI + RGO
+    referrals_received_total = Column(Integer, default=0)   # RRI + RRO
+
+    # Legacy fields (keep for backward compat, will phase out)
+    referrals_given = Column(Integer, default=0)          # = referrals_given_total
+    referrals_received = Column(Integer, default=0)        # = referrals_received_total
+    referrals_outside = Column(Integer, default=0)         # RGO + RRO
+
+    # Other PALMS metrics
     visitors_brought = Column(Integer, default=0)
     one_to_ones = Column(Integer, default=0)
     tyfcb_amount = Column(Numeric(15, 2), default=0)
     ceu_credits = Column(Integer, default=0)
+
+    # Meta
     raw_data = Column(JSONB, default={})
     import_id = Column(UUID(as_uuid=True))
     created_at = Column(DateTime, default=datetime.utcnow)
-    
+
     chapter = relationship("Chapter")
     member = relationship("Member")
 
