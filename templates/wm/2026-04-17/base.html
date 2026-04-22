@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BNI Mahardika — Power Team Flywheel Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0d0f1a;
+      --card: #151929;
+      --border: rgba(99,179,237,0.15);
+      --accent1: #63b3ed;
+      --accent2: #f6ad55;
+      --accent3: #68d391;
+      --accent4: #fc8181;
+      --accent5: #b794f4;
+      --text: #e2e8f0;
+      --muted: #718096;
+      --gold: #f6e05e;
+      --bni-red: #CF2030;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #0d1b3e 0%, #1a2a5e 50%, #0d1b3e 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 2rem 2.5rem 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    header::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 20% 50%, rgba(99,179,237,0.08) 0%, transparent 60%),
+                  radial-gradient(ellipse at 80% 20%, rgba(246,173,85,0.06) 0%, transparent 50%);
+      pointer-events: none;
+    }
+    .header-inner { max-width: 1300px; margin: 0 auto; position: relative; }
+    .brand { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem; }
+    .brand-badge {
+      background: var(--accent1);
+      color: #0d1b3e;
+      font-weight: 800;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      padding: 0.3rem 0.7rem;
+      border-radius: 999px;
+    }
+    h1 {
+      font-size: clamp(1.4rem, 3vw, 2.2rem);
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.02em;
+    }
+    h1 span { color: var(--accent2); }
+    .subtitle { color: var(--muted); font-size: 0.9rem; margin-top: 0.3rem; }
+    
+    .back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--accent1);
+        text-decoration: none;
+        font-size: 0.9rem;
+        margin-bottom: 1.5rem;
+        transition: opacity 0.2s;
+    }
+    .back-btn:hover { opacity: 0.8; }
+
+    /* ── Layout ── */
+    main { max-width: 1300px; margin: 0 auto; padding: 2rem 1.5rem; }
+    .section-title {
+      font-size: 1.25rem; font-weight: 700;
+      color: var(--accent1);
+      border-left: 3px solid var(--accent2);
+      padding-left: 0.75rem;
+      margin: 2.5rem 0 1.25rem;
+      display: flex; align-items: center; gap: 0.6rem;
+    }
+
+    /* ── Flywheel Card ── */
+    .flywheel-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .flywheel-card::after {
+      content: '';
+      position: absolute;
+      top: -1px; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent1), var(--accent2), var(--accent3));
+    }
+
+    /* ── Tooltip ── */
+    .tooltip {
+      position: fixed;
+      background: #1e2d50;
+      border: 1px solid var(--accent1);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      font-size: 0.82rem;
+      max-width: 240px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s;
+      z-index: 9999;
+      color: var(--text);
+      line-height: 1.5;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+    .tooltip.show { opacity: 1; }
+    .tooltip strong { color: var(--accent2); }
+
+    /* ── Grid ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+    @media (max-width: 900px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    }
+
+    /* ── KPI Cards ── */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+    @media (max-width: 800px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+    .kpi {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.2rem 1.4rem;
+      position: relative; overflow: hidden;
+    }
+    .kpi::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    }
+    .kpi.blue::before { background: var(--accent1); }
+    .kpi.orange::before { background: var(--accent2); }
+    .kpi.green::before { background: var(--accent3); }
+    .kpi.red::before { background: var(--accent4); }
+    .kpi-num { font-size: 2.2rem; font-weight: 800; line-height: 1; }
+    .kpi.blue .kpi-num { color: var(--accent1); }
+    .kpi.orange .kpi-num { color: var(--accent2); }
+    .kpi.green .kpi-num { color: var(--accent3); }
+    .kpi.red .kpi-num { color: var(--accent4); }
+    .kpi-label { font-size: 0.8rem; color: var(--muted); margin-top: 0.3rem; }
+
+    /* ── Cluster Legend ── */
+    .legend-strip {
+      display: flex; flex-wrap: wrap; gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .legend-item {
+      display: flex; align-items: center; gap: 0.4rem;
+      font-size: 0.78rem; color: var(--muted);
+      cursor: pointer;
+      padding: 0.3rem 0.6rem;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+    }
+    .legend-item:hover { border-color: var(--border); background: rgba(255,255,255,0.04); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── SVG containers ── */
+    svg { display: block; width: 100%; }
+
+    /* ── Progress bars ── */
+    .prog-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.6rem; }
+    .prog-label { font-size: 0.8rem; min-width: 180px; color: var(--text); }
+    .prog-bar-bg { flex: 1; background: rgba(255,255,255,0.06); border-radius: 999px; height: 10px; overflow: hidden; }
+    .prog-bar-fill { height: 100%; border-radius: 999px; transition: width 1.2s cubic-bezier(0.23,1,0.32,1); }
+    .prog-val { font-size: 0.78rem; color: var(--muted); min-width: 36px; text-align: right; }
+
+    /* ── Cluster cards ── */
+    .cluster-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+    .cluster-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.1rem 1.3rem;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .cluster-name { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem; }
+    .gap-tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      background: rgba(255,255,255,0.05);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      margin-right: 0.3rem;
+      margin-top: 0.3rem;
+      color: var(--accent2);
+    }
+    
+    /* ── Wanted table ── */
+    .wanted-list { display: flex; flex-direction: column; gap: 0.6rem; }
+    .wanted-item {
+      display: flex; align-items: center; gap: 0.75rem;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.7rem 1rem;
+      transition: border-color 0.2s;
+    }
+    .wanted-item:hover { border-color: rgba(99,179,237,0.35); }
+    .wanted-rank {
+      font-size: 1.2rem; font-weight: 800;
+      min-width: 36px; text-align: center;
+    }
+    .wanted-name { font-size: 0.9rem; font-weight: 700; color: #fff; }
+    .wanted-meta { font-size: 0.75rem; color: var(--muted); margin-top: 1px; }
+    .wanted-visitor {
+      font-size: 0.7rem; color: var(--accent3); margin-top: 2px;
+      background: rgba(104,211,145,0.1); padding: 0.1rem 0.4rem; border-radius: 4px; display: inline-block;
+    }
+    .wanted-score { font-size: 1.1rem; font-weight: 800; }
+
+    /* ── Power Team groups ── */
+    .pt-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    @media (max-width: 800px) { .pt-grid { grid-template-columns: 1fr; } }
+    .pt-card {
+      border-radius: 16px;
+      padding: 1.3rem;
+      border: 1px solid var(--border);
+      transition: transform 0.2s;
+    }
+    .pt-card:hover { transform: translateY(-3px); }
+    .pt-card.a { background: linear-gradient(135deg, rgba(99,179,237,0.08) 0%, rgba(0,0,0,0) 100%); border-color: rgba(99,179,237,0.25); }
+    .pt-card.b { background: linear-gradient(135deg, rgba(246,173,85,0.08) 0%, rgba(0,0,0,0) 100%); border-color: rgba(246,173,85,0.25); }
+    .pt-card.c { background: linear-gradient(135deg, rgba(104,211,145,0.08) 0%, rgba(0,0,0,0) 100%); border-color: rgba(104,211,145,0.25); }
+    .pt-title { font-size: 1rem; font-weight: 800; margin-bottom: 0.3rem; }
+    .pt-card.a .pt-title { color: var(--accent1); }
+    .pt-card.b .pt-title { color: var(--accent2); }
+    .pt-card.c .pt-title { color: var(--accent3); }
+    .pt-sub { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.9rem; }
+    .pt-member {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-size: 0.82rem; padding: 0.3rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .pt-member:last-child { border-bottom: none; }
+    .pt-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.65rem; font-weight: 700; flex-shrink: 0;
+    }
+    .pt-card.a .pt-avatar { background: rgba(99,179,237,0.2); color: var(--accent1); }
+    .pt-card.b .pt-avatar { background: rgba(246,173,85,0.2); color: var(--accent2); }
+    .pt-card.c .pt-avatar { background: rgba(104,211,145,0.2); color: var(--accent3); }
+
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <a href="/" class="back-btn">← Kembali ke Hub</a>
+      <div class="brand">
+        <span class="brand-badge">EDU MOMENT</span>
+        <h1>The <span>Power Team</span> Flywheel</h1>
+      </div>
+      <p class="subtitle">Analisa Cluster & Gap Referral — Chapter Mahardika (Data per April 2026)</p>
+    </div>
+  </header>
+
+  <main>
+    <div class="kpi-grid">
+      <div class="kpi blue">
+        <div class="kpi-num">51</div>
+        <div class="kpi-label">Total Members</div>
+      </div>
+      <div class="kpi orange">
+        <div class="kpi-num">20</div>
+        <div class="kpi-label">Data Terkumpul (39%)</div>
+      </div>
+      <div class="kpi green">
+        <div class="kpi-num">9</div>
+        <div class="kpi-label">Clusters Terdeteksi</div>
+      </div>
+      <div class="kpi red">
+        <div class="kpi-num">31</div>
+        <div class="kpi-label">Members Belum Isi</div>
+      </div>
+    </div>
+
+    <div class="section-title">⚙️ Strategi Flywheel: Bottom-Up Stimulation</div>
+    <div class="flywheel-card">
+      <svg id="flywheel-svg" viewBox="0 0 800 400"></svg>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <div class="section-title">📊 Cluster Map (Berdasarkan Target Market)</div>
+        <div class="flywheel-card">
+          <div id="bubble-legend" class="legend-strip"></div>
+          <svg id="bubble-svg" viewBox="0 0 900 380"></svg>
+        </div>
+      </div>
+      <div>
+        <div class="section-title">🔍 Market Gap: Siapa Yang Paling Dicari?</div>
+        <div class="flywheel-card">
+          <div id="prog-container"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">🏢 Detail Cluster & Market Gaps</div>
+    <div id="cluster-cards" class="cluster-cards"></div>
+
+    <div class="section-title">🚨 Top 10 Member Yang Paling Dicari</div>
+    <div class="grid-2">
+      <div class="flywheel-card">
+        <svg id="radar-svg" viewBox="0 0 400 380"></svg>
+      </div>
+      <div class="flywheel-card">
+        <div id="wanted-list" class="wanted-list"></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <div class="section-title">📊 Status Respon Form (20/51)</div>
+        <div class="flywheel-card">
+          <svg id="donut-svg" viewBox="0 0 300 280"></svg>
+        </div>
+      </div>
+      <div>
+        <div class="section-title">⚠️ Belum Isi Form (Paling Dicari!)</div>
+        <div class="flywheel-card">
+          <div id="missing-members"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">⚡ Proposed Power Teams (Exercise)</div>
+    <div id="pt-grid" class="pt-grid"></div>
+
+    <div class="section-title">📅 Timeline Ha Hi Hi (16 April 2026)</div>
+    <div class="flywheel-card" style="overflow-x: auto;">
+      <svg id="timeline-svg" viewBox="0 0 900 200" style="min-width: 900px;"></svg>
+    </div>
+
+  </main>
+
+  <div id="tooltip" class="tooltip"></div>
+
+  <script>
+    const CLUSTER_COLORS = ["#63b3ed", "#f6ad55", "#68d391", "#fc8181", "#b794f4", "#76e4f7", "#fbb6ce", "#9ae6b4", "#fbd38d"];
+    
+    const clusters = [
+      { id: 1, emoji: "🥘", name: "F&B Supply Chain", color: CLUSTER_COLORS[0], count: 7, members: ["Yohanes Martin","Michelle F.","Shaun Clement","Harisendi","Josefa Dhea","Willy Hono","Gracia P."], gaps: ["Distributor Sembako", "Cold Storage", "Supplier Sayur Import"] },
+      { id: 2, emoji: "🏗️", name: "Construction & Property", color: CLUSTER_COLORS[1], count: 6, members: ["Kiki Mulyono","Bobby Hartanto","Andy","Ray*","Richard*","Evan*"], gaps: ["Interior Designer", "Supplier Lantai", "Solar Panel"] },
+      { id: 3, emoji: "💼", name: "Professional Services", color: CLUSTER_COLORS[2], count: 3, members: ["Henny Setiadi","Benny*","Awan Santosa"], gaps: ["Legal/Lawyer", "Tax Consultant", "ISO Auditor"] },
+      { id: 4, emoji: "🩺", name: "Medical & Wellness", color: CLUSTER_COLORS[3], count: 2, members: ["Dr. Rosy","Awalia"], gaps: ["Apotek Chain", "Alat Kesehatan", "Klinik Kecantikan"] },
+      { id: 5, emoji: "✨", name: "General Services", color: CLUSTER_COLORS[4], count: 3, members: ["Eunike Eriko","Satrio B.","Wilsary*"], gaps: ["Cleaning Service", "Security", "Pest Control"] }
+    ];
+
+    const wantedData = [
+      { rank:1, name:"Logistics / Freight", score:98, mentions:4, mentionBy:"Yohanes, Shaun, Henny, Albhert", visitor:"Yuli Rismawati ⭐ (4 bln no F/U)" },
+      { rank:2, name:"EO / Event Organizer", score:88, mentions:3, mentionBy:"Josefa, Harisendi, Eunike", visitor:"Raden Rani (Jan 15)" },
+      { rank:3, name:"Distributor F&B", score:85, mentions:3, mentionBy:"Yohanes, Michelle, Satrio", visitor:"—" },
+      { rank:4, name:"Hotel Owner / Mgmt", score:82, mentions:4, mentionBy:"Kiki, Shaun, Josefa, Andy", visitor:"Sandra Mulyanti (Feb 5)" },
+      { rank:5, name:"Legal / Pengacara", score:80, mentions:3, mentionBy:"Rosy, Awalia, Eunike", visitor:"Tri Agus Susanto (Des 4)" },
+      { rank:6, name:"Skincare Manufacturer", score:75, mentions:3, mentionBy:"Stella, Awalia, Kiki", visitor:"(niche baru!)" },
+      { rank:7, name:"ERP / Software House", score:72, mentions:1, mentionBy:"Satrio (1) tapi serves ALL mfg", visitor:"—" },
+      { rank:8, name:"Certification Consultant", score:68, mentions:1, mentionBy:"Henny (ISO, SNI, Halal)", visitor:"—" },
+    ];
+
+    const topCustomers = [
+      { name: "🍽️ Restoran / Café / Hotel", mentions: 6 },
+      { name: "🏭 Manufacturing / Pabrik", mentions: 5 },
+      { name: "🏪 Franchise F&B", mentions: 4 },
+      { name: "🏢 Corporate / Perusahaan Besar", mentions: 4 },
+      { name: "🏠 Developer Property", mentions: 4 }
+    ];
+
+    const powerTeams = [
+      {
+        key:"a", label:"A", name:"BANGUN BANDUNG", theme:"🏗️",
+        desc:"Property & Construction Referral Chain",
+        members:[
+          {init:"KK",name:"Kiki Mulyono",role:"Arsitek Komersial"},
+          {init:"RG",name:"Ray Grimaldi",role:"Kontraktor Umum"},
+          {init:"ES",name:"Evan Sudharmanto",role:"Kontraktor Franchise"},
+          {init:"BH",name:"Bobby Hartanto",role:"Distributor Besi"},
+          {init:"ER",name:"Erick",role:"Alat Teknik"},
+          {init:"EU",name:"Eunike Eriko",role:"Notaris / PPAT"},
+        ]
+      },
+      {
+        key:"b", label:"B", name:"RASA BANDUNG", theme:"🍽️",
+        desc:"F&B & Consumer Brand Supply Chain",
+        members:[
+          {init:"WH",name:"Willy Hono",role:"F&B Beverages"},
+          {init:"GP",name:"Gracia P.",role:"Food Products"},
+          {init:"EL",name:"Elbert",role:"Printing"},
+          {init:"SC",name:"Stella Clarissa",role:"Packaging Plastik"},
+          {init:"WI",name:"Wawan Irawan",role:"Paper Lunch Box"},
+          {init:"FD",name:"Faradina",role:"Branding"},
+        ]
+      },
+      {
+        key:"c", label:"C", name:"CORPORATE CONNECT", theme:"💼",
+        desc:"B2B Corporate & Industrial Supply",
+        members:[
+          {init:"MB",name:"Marcel Budyanto",role:"Apparel Manufacturing"},
+          {init:"AW",name:"Albhert Wijaya",role:"Chemical Trader"},
+          {init:"AW",name:"Awan",role:"HR / SDM"},
+          {init:"WL",name:"Wilsary",role:"Accounting"},
+          {init:"JO",name:"Johanes Martin",role:"IT / Komputer"},
+        ]
+      }
+    ];
+
+    const timelineItems = [
+      { time:"11:50", label:"Umumkan Grup" },
+      { time:"11:55", label:"Round Robin 1 min/orang" },
+      { time:"12:05", label:"Customer Mapping" },
+      { time:"12:25", label:"Action Plan 1 HOT Customer" },
+      { time:"12:40", label:"Presentasi per Grup" },
+      { time:"12:50", label:"Recap Lucky" },
+      { time:"13:10", label:"Foto Bareng 📸" },
+    ];
+
+    const missingMembers = [
+      { name:"Ray Grimaldi", mentions:4, note:"Kontraktor — disebut PALING BANYAK" },
+      { name:"Richard Tandri", mentions:3, note:"Arsitek — core cluster 2" },
+      { name:"Evan Sudharmanto", mentions:3, note:"Kontraktor Franchise" },
+      { name:"Gracia Permatasari", mentions:2, note:"Food Products — disebut Michelle & Yohanes" },
+      { name:"Indah Widyaningsih", mentions:2, note:"Disebut Wawan & Shaun" },
+      { name:"Marcel Budyanto", mentions:2, note:"Apparel Manufacturing" },
+      { name:"Wilsary", mentions:3, note:"Accounting — Satrio, Eunike, Kiki" },
+    ];
+
+    // Tooltip
+    const tip = document.getElementById("tooltip");
+    function showTip(html, e) {
+      tip.innerHTML = html;
+      tip.classList.add("show");
+      tip.style.left = (e.clientX + 15) + "px";
+      tip.style.top = (e.clientY + 15) + "px";
+    }
+    function hideTip() { tip.classList.remove("show"); }
+
+    // 1. Flywheel
+    (function() {
+      const svg = d3.select("#flywheel-svg");
+      const W = 800, H = 400, cx = W/2, cy = H/2, R = 120;
+      const steps = [
+        { angle: -90, label: "DATA", color: CLUSTER_COLORS[0] },
+        { angle: -18, label: "HIPOTESA", color: CLUSTER_COLORS[1] },
+        { angle: 54, label: "TRIAL", color: CLUSTER_COLORS[2] },
+        { angle: 126, label: "EFFORT", color: CLUSTER_COLORS[3] },
+        { angle: 198, label: "HASIL", color: CLUSTER_COLORS[4] }
+      ];
+
+      svg.append("circle").attr("cx", cx).attr("cy", cy).attr("r", R).attr("fill", "none").attr("stroke", "rgba(255,255,255,0.1)").attr("stroke-dasharray", "5,5");
+
+      steps.forEach(s => {
+        const rad = s.angle * Math.PI / 180;
+        const x = cx + R * Math.cos(rad);
+        const y = cy + R * Math.sin(rad);
+        svg.append("circle").attr("cx", x).attr("cy", y).attr("r", 35).attr("fill", "#151929").attr("stroke", s.color).attr("stroke-width", 2);
+        svg.append("text").attr("x", x).attr("y", y).attr("text-anchor", "middle").attr("dominant-baseline", "central").attr("fill", "#fff").attr("font-size", "10").attr("font-weight", "bold").text(s.label);
+      });
+    })();
+
+    // 2. Bubbles
+    (function() {
+      const svg = d3.select("#bubble-svg");
+      const root = d3.hierarchy({children: clusters}).sum(d => d.count);
+      d3.pack().size([900, 380]).padding(10)(root);
+      
+      const node = svg.selectAll("g").data(root.leaves()).join("g").attr("transform", d => `translate(${d.x},${d.y})`);
+      node.append("circle").attr("r", d => d.r).attr("fill", d => d.data.color + "22").attr("stroke", d => d.data.color).attr("stroke-width", 2);
+      node.append("text").attr("text-anchor", "middle").attr("fill", "#fff").attr("font-size", "12").text(d => d.data.emoji);
+      
+      const leg = document.getElementById("bubble-legend");
+      clusters.forEach(c => {
+        leg.innerHTML += `<div class="legend-item"><span class="legend-dot" style="background:${c.color}"></span>${c.name}</div>`;
+      });
+    })();
+
+    // 5. Progress
+    const pc = document.getElementById("prog-container");
+    topCustomers.forEach((d, i) => {
+      pc.innerHTML += `
+        <div class="prog-row">
+          <div class="prog-label">${d.name}</div>
+          <div class="prog-bar-bg"><div class="prog-bar-fill" style="width:${d.mentions*15}%; background:${CLUSTER_COLORS[i]}"></div></div>
+          <div class="prog-val">${d.mentions}x</div>
+        </div>
+      `;
+    });
+
+    // 6. Cards
+    const cc = document.getElementById("cluster-cards");
+    clusters.forEach(c => {
+      cc.innerHTML += `
+        <div class="cluster-card">
+          <div class="cluster-name" style="color:${c.color}">${c.emoji} ${c.name}</div>
+          <div style="font-size:0.8rem; color:var(--muted); margin-bottom:0.5rem">${c.members.join(", ")}</div>
+          <div>${c.gaps.map(g => `<span class="gap-tag">${g}</span>`).join("")}</div>
+        </div>
+      `;
+    });
+
+// ────────────────────────────────────────────────
+// 7. RADAR CHART
+// ────────────────────────────────────────────────
+(function drawRadar() {
+  const data = wantedData.slice(0,8);
+  const N = data.length;
+  const svg = d3.select("#radar-svg");
+  const W=400, H=380, cx=W/2, cy=H/2+10, R=130;
+
+  // Grid
+  [0.25,0.5,0.75,1].forEach(t => {
+    const pts = d3.range(N).map(i => {
+      const a = (i/N)*2*Math.PI - Math.PI/2;
+      return [cx+R*t*Math.cos(a), cy+R*t*Math.sin(a)];
+    });
+    svg.append("polygon")
+      .attr("points",pts.map(p=>p.join(",")).join(" "))
+      .attr("fill","none").attr("stroke","rgba(255,255,255,0.07)").attr("stroke-width",1);
+  });
+
+  // Axes
+  data.forEach((_,i) => {
+    const a = (i/N)*2*Math.PI - Math.PI/2;
+    svg.append("line")
+      .attr("x1",cx).attr("y1",cy)
+      .attr("x2",cx+R*Math.cos(a)).attr("y2",cy+R*Math.sin(a))
+      .attr("stroke","rgba(255,255,255,0.1)").attr("stroke-width",1);
+  });
+
+  // Labels
+  data.forEach((d,i) => {
+    const a = (i/N)*2*Math.PI - Math.PI/2;
+    const lR = R+36;
+    svg.append("text")
+      .attr("x", cx+lR*Math.cos(a)).attr("y", cy+lR*Math.sin(a))
+      .attr("text-anchor","middle").attr("dominant-baseline","central")
+      .attr("fill","rgba(255,255,255,0.55)").attr("font-size","8.5")
+      .text(`#${d.rank} ${d.name.substring(0,14)}`);
+  });
+
+  // Data polygon
+  const maxScore = 100;
+  const pts = data.map((d,i) => {
+    const a = (i/N)*2*Math.PI - Math.PI/2;
+    const r = (d.score/maxScore)*R;
+    return [cx+r*Math.cos(a), cy+r*Math.sin(a)];
+  });
+
+  svg.append("polygon")
+    .attr("points", pts.map(p=>p.join(",")).join(" "))
+    .attr("fill","rgba(99,179,237,0.15)")
+    .attr("stroke","#63b3ed").attr("stroke-width",2);
+
+  // Dots
+  data.forEach((d,i) => {
+    svg.append("circle")
+      .attr("cx",pts[i][0]).attr("cy",pts[i][1]).attr("r",4)
+      .attr("fill","#63b3ed").attr("stroke","#fff").attr("stroke-width",1.5)
+      .on("mouseover",(e)=>{
+        showTip(`<strong>#${d.rank} ${d.name}</strong><br/>Score: ${d.score}<br/>Disebut: ${d.mentions}x<br/>Oleh: ${d.mentionBy}`, e);
+      })
+      .on("mouseout", hideTip)
+      .style("cursor","pointer");
+  });
+
+  svg.append("text").attr("x",cx).attr("y",20)
+    .attr("text-anchor","middle").attr("fill","rgba(255,255,255,0.5)").attr("font-size","11")
+    .text("Radar: Top 8 Wanted Members (Score)");
+})();
+
+// ────────────────────────────────────────────────
+// 8. WANTED LIST
+// ────────────────────────────────────────────────
+(function drawWanted() {
+  const el = document.getElementById("wanted-list");
+  const rankColors = ["#f6e05e","#e2e8f0","#f6ad55","#68d391","#b794f4","#63b3ed","#76e4f7","#fbb6ce","#9ae6b4","#fc8181"];
+  wantedData.forEach(d => {
+    el.innerHTML += `
+    <div class="wanted-item">
+      <div class="wanted-rank" style="color:${rankColors[d.rank-1]}">#${d.rank}</div>
+      <div style="flex:1">
+        <div class="wanted-name">${d.name}</div>
+        <div class="wanted-meta">Disebut ${d.mentions}x · ${d.mentionBy}</div>
+        ${d.visitor!=="—"?`<div class="wanted-visitor">✅ ${d.visitor}</div>`:`<div style="font-size:0.7rem;color:#fc8181;margin-top:2px">❌ Belum ada visitor match</div>`}
+      </div>
+      <div class="wanted-score" style="color:${rankColors[d.rank-1]}">${d.score}</div>
+    </div>`;
+  });
+})();
+
+// ────────────────────────────────────────────────
+// 9. DONUT CHART
+// ────────────────────────────────────────────────
+(function drawDonut() {
+  const svg = d3.select("#donut-svg");
+  const W=300, H=280, cx=W/2, cy=125, R=90, IR=58;
+
+  const pieData = [
+    { label:"Sudah Isi Form", value:20, color:"#63b3ed" },
+    { label:"Belum Isi Form", value:31, color:"rgba(255,255,255,0.08)" },
+  ];
+
+  const pie = d3.pie().value(d=>d.value).sort(null).padAngle(0.03);
+  const arc = d3.arc().innerRadius(IR).outerRadius(R);
+  const arcHover = d3.arc().innerRadius(IR).outerRadius(R+8);
+
+  const g = svg.append("g").attr("transform",`translate(${cx},${cy})`);
+
+  g.selectAll("path")
+    .data(pie(pieData))
+    .join("path")
+    .attr("d", arc)
+    .attr("fill", d=>d.data.color)
+    .attr("stroke","#0d0f1a").attr("stroke-width",2)
+    .on("mouseover", function(e,d) {
+      d3.select(this).attr("d", arcHover);
+      showTip(`<strong>${d.data.label}</strong><br/>${d.data.value} members<br/>${Math.round(d.data.value/51*100)}%`, e);
+    })
+    .on("mouseout", function(_,d) { d3.select(this).attr("d", arc); hideTip(); });
+
+  // Center text
+  g.append("text").attr("text-anchor","middle").attr("y",-10)
+    .attr("fill","#63b3ed").attr("font-size","28").attr("font-weight","800").text("20");
+  g.append("text").attr("text-anchor","middle").attr("y",10)
+    .attr("fill","rgba(255,255,255,0.5)").attr("font-size","10").text("of 51 members");
+  g.append("text").attr("text-anchor","middle").attr("y",24)
+    .attr("fill","rgba(255,255,255,0.3)").attr("font-size","10").text("responded");
+
+  // Legend
+  const legG = svg.append("g").attr("transform",`translate(${cx},${cy+R+30})`);
+  pieData.forEach((d,i) => {
+    legG.append("rect").attr("x",-60).attr("y",i*18).attr("width",10).attr("height",10).attr("rx",3).attr("fill",d.color === "rgba(255,255,255,0.08)" ? "rgba(255,255,255,0.25)" : d.color);
+    legG.append("text").attr("x",-46).attr("y",i*18+9)
+      .attr("fill","rgba(255,255,255,0.6)").attr("font-size","9.5")
+      .text(`${d.label} (${d.value})`);
+  });
+})();
+
+// ────────────────────────────────────────────────
+// 10. MISSING MEMBERS
+// ────────────────────────────────────────────────
+(function drawMissing() {
+  const el = document.getElementById("missing-members");
+  missingMembers.sort((a,b)=>b.mentions-a.mentions).forEach(m => {
+    const bars = "█".repeat(m.mentions);
+    el.innerHTML += `
+    <div style="display:flex;align-items:center;gap:0.75rem;padding:0.55rem 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+      <div style="font-size:1rem;color:#fc8181;min-width:20px;text-align:center">⚠️</div>
+      <div style="flex:1">
+        <div style="font-size:0.85rem;font-weight:700;color:#e2e8f0">${m.name}</div>
+        <div style="font-size:0.75rem;color:#718096">${m.note}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:0.75rem;color:#f6ad55;font-weight:700">${bars} ${m.mentions}x disebut</div>
+        <div style="font-size:0.65rem;color:#fc8181;margin-top:1px">Belum isi form!</div>
+      </div>
+    </div>`;
+  });
+})();
+
+// ────────────────────────────────────────────────
+// 11. POWER TEAMS
+// ────────────────────────────────────────────────
+(function drawPT() {
+  const el = document.getElementById("pt-grid");
+  powerTeams.forEach(pt => {
+    el.innerHTML += `
+    <div class="pt-card ${pt.key}">
+      <div class="pt-title">${pt.theme} GROUP ${pt.label}: ${pt.name}</div>
+      <div class="pt-sub">${pt.desc}</div>
+      ${pt.members.map(m=>`
+      <div class="pt-member">
+        <div class="pt-avatar">${m.init}</div>
+        <div>
+          <div style="font-size:0.82rem;font-weight:600">${m.name}</div>
+          <div style="font-size:0.7rem;color:#718096">${m.role}</div>
+        </div>
+      </div>`).join("")}
+    </div>`;
+  });
+})();
+
+// ────────────────────────────────────────────────
+// 12. TIMELINE
+// ────────────────────────────────────────────────
+(function drawTimeline() {
+  const svg = d3.select("#timeline-svg");
+  const W=900, H=200;
+  const margin={left:50,right:50};
+  const n = timelineItems.length;
+  const step = (W - margin.left - margin.right) / (n-1);
+
+  const cy = 100;
+
+  // Track line
+  svg.append("line")
+    .attr("x1",margin.left).attr("y1",cy)
+    .attr("x2",W-margin.right).attr("y2",cy)
+    .attr("stroke","rgba(255,255,255,0.1)").attr("stroke-width",2);
+
+  timelineItems.forEach((t,i) => {
+    const x = margin.left + i*step;
+    const colorArr = CLUSTER_COLORS;
+    const col = colorArr[i % colorArr.length];
+
+    // Connector
+    svg.append("line")
+      .attr("x1",x).attr("y1",i%2===0?cy-20:cy+20)
+      .attr("x2",x).attr("y2",cy)
+      .attr("stroke",col).attr("stroke-width",1.5).attr("stroke-dasharray","3,2");
+
+    // Dot
+    svg.append("circle").attr("cx",x).attr("cy",cy).attr("r",8)
+      .attr("fill","#0d0f1a").attr("stroke",col).attr("stroke-width",2.5);
+    svg.append("circle").attr("cx",x).attr("cy",cy).attr("r",3).attr("fill",col);
+
+    // Time label
+    svg.append("text").attr("x",x).attr("y",cy+(i%2===0?28:-32))
+      .attr("text-anchor","middle").attr("fill",col).attr("font-size","9.5").attr("font-weight","700")
+      .text(t.time);
+
+    // Activity label
+    const lines = t.label.split(" ");
+    const mid = Math.ceil(lines.length/2);
+    const line1 = lines.slice(0,mid).join(" ");
+    const line2 = lines.slice(mid).join(" ");
+    svg.append("text").attr("x",x).attr("y",cy+(i%2===0?40:-50))
+      .attr("text-anchor","middle").attr("fill","rgba(255,255,255,0.6)").attr("font-size","8.5")
+      .text(line1);
+    if(line2) svg.append("text").attr("x",x).attr("y",cy+(i%2===0?52:-38))
+      .attr("text-anchor","middle").attr("fill","rgba(255,255,255,0.45)").attr("font-size","8.5")
+      .text(line2);
+  });
+})();
+  </script>
+</body>
+</html>
