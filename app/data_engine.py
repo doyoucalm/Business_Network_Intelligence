@@ -254,12 +254,30 @@ def process_roster_excel(file_content: bytes, chapter_id, db: Session):
 # ═══════════════════════════════════════════════════════════════════
 
 def _get_palms_col(row: list, col_map: dict, *keys):
-    """Get cell value from PALMS row by column name variants."""
+    """Get cell value from PALMS row by column name, trying variants."""
     for key in keys:
         if key in col_map:
             idx = col_map[key]
             if idx < len(row):
                 return row[idx].strip()
+    # Handle abbreviated column name mappings
+    abbrevs = {
+        "RGI": ("RG", "RGI"),
+        "RGO": ("RGO",),
+        "RRI": ("RR", "RRI"),
+        "RRO": ("RRO",),
+        "1-2-1": ("121", "1to1", "1-2-1"),
+        "TYFCB": ("TYFCB",),
+        "CEU": ("CEU",),
+        "V": ("V",),
+    }
+    for key in keys:
+        if key in abbrevs:
+            for abbr in abbrevs[key]:
+                if abbr in col_map:
+                    idx = col_map[abbr]
+                    if idx < len(row):
+                        return row[idx].strip()
     return ""
 
 
@@ -269,9 +287,12 @@ def _find_header_row_palms(rows: list) -> tuple:
         if len(row) < 10:
             continue
         row_lower = [c.lower() for c in row]
-        # PALMS header has "First Name", "Last Name", "RGI", "RGO", "TYFCB" etc.
         has_name = any("first name" in c or "last name" in c for c in row_lower)
-        has_rgi = any(c.strip() in ("rgi", "rg i", "referrals given inside") for c in row)
+        # Accept both full (RGI/RGO/RRI/RRO) and abbreviated (RG/RR) column names
+        has_rgi = any(
+            c.strip().lower() in ("rgi", "rg", "rg i", "referrals given inside")
+            for c in row
+        )
         has_tyfcb = any("tyfcb" in c.lower() or "1-2-1" in c.lower() for c in row_lower)
         if has_name and has_rgi:
             col_map = {c.strip(): j for j, c in enumerate(row) if c.strip()}
