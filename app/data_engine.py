@@ -2,7 +2,7 @@ import pandas as pd
 import io
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
-from .models import Member, Chapter, ActivityLog, UploadedFile
+from .models import Member, Chapter, ActivityLog, UploadedFile, PalmsSnapshot, Visitor
 import json
 
 SOP_SCHEDULE = [
@@ -69,3 +69,12 @@ def is_overdue(last_date, frequency):
     if frequency == "Monthly":
         return now - last_date > timedelta(days=30)
     return False
+
+def process_palms_excel(file_content: bytes, chapter_id, db: Session):
+    # Placeholder for PALMS parser
+    # In Phase 2, this will parse BNI Connect PALMS Summary
+    return {"added": 0, "updated": 0, "errors": 0, "status": "STUB"}
+
+def process_visitor_excel(file_content: bytes, chapter_id, db: Session):
+    # Placeholder for Visitor parser
+    return {"added": 0, "updated": 0, "errors": 0, "status": "STUB"}
