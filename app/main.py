@@ -8,6 +8,7 @@ from .models import Chapter, Member, FormTemplate, FormResponse, EduContent, Act
 from .ai import chat_with_ai
 from .auth import verify_password, create_access_token, get_current_user, require_auth, ACCESS_TOKEN_EXPIRE_MINUTES, is_admin
 from .data_engine import process_roster_excel, process_palms_excel, process_visitor_excel, get_sop_status
+from .traffic_light import calculate_all_traffic_lights
 import os
 from datetime import datetime, timedelta
 from typing import Optional, List
@@ -252,6 +253,25 @@ async def admin_upload(
     db.commit()
 
     return {"status": "ok", "data_type": data_type, "summary": summary}
+
+@app.get("/api/admin/traffic-lights")
+async def traffic_lights(db: Session = Depends(get_db), user: Member = Depends(require_auth)):
+    if not is_admin(user, db):
+        raise HTTPException(status_code=403)
+    chapter = db.query(Chapter).first()
+    results = calculate_all_traffic_lights(db, chapter.id)
+
+    colors = [r["color"] for r in results]
+    summary = {
+        "green": colors.count("green"),
+        "yellow": colors.count("yellow"),
+        "orange": colors.count("orange"),
+        "red": colors.count("red"),
+        "grey": colors.count("grey"),
+        "total": len(results),
+    }
+
+    return {"summary": summary, "members": results}
 
 @app.post("/api/form/{slug}")
 async def submit_form(slug: str, request: Request, db: Session = Depends(get_db), user: Member = Depends(require_auth)):
