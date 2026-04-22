@@ -7,9 +7,9 @@ from .database import engine, Base, get_db
 from .models import Chapter, Member, FormTemplate, FormResponse, EduContent, ActivityLog
 from .ai import chat_with_ai
 from .auth import verify_password, create_access_token, get_current_user, require_auth, ACCESS_TOKEN_EXPIRE_MINUTES
-from .data_engine import process_roster_excel, get_sop_status
+from .data_engine import process_roster_excel, process_palms_excel, process_visitor_excel, get_sop_status
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, List
 
 app = FastAPI(title="Mahardika Hub")
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -64,6 +64,56 @@ async def admin_upload_page(request: Request, db: Session = Depends(get_db), use
     return templates.TemplateResponse(
         request=request, name="admin_upload.html", context={"chapter": chapter, "user": user, "sop_status": sop_status}
     )
+
+
+@app.get("/wm/{date}")
+async def wm_slides_page(date: str, request: Request, db: Session = Depends(get_db), user: Optional[Member] = Depends(get_current_user)):
+    """Weekly Meeting Slides - e.g., /wm/2026-04-17"""
+    chapter = db.query(Chapter).first()
+    # Get meeting video from chapter settings
+    chapter_settings = chapter.settings or {}
+    meeting_config = chapter_settings.get("meeting_video", {})
+    # Get slides config safely
+    slides_config = chapter_settings.get("wm_slides_config")
+    if slides_config is None:
+        slides_config = {}
+    
+    context = {
+        "chapter": chapter, 
+        "date": date,
+        "user": user,
+        "meeting_video_id": meeting_config.get("video_id", ""),
+        "meeting_video_title": meeting_config.get("title", "Weekly Meeting - Welcome Video"),
+        "slides_config": slides_config,
+        "global_stats": {
+            "members": "340,000+",
+            "chapters": "11,300+", 
+            "countries": "76"
+        }
+    }
+    
+    return templates.TemplateResponse(
+        request=request, name="wm/wm_slides.html", context=context
+    )
+
+@app.post("/api/admin/wm-slides")
+async def save_wm_slides_config(request: Request, db: Session = Depends(get_db), user: Member = Depends(require_auth)):
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Akses ditolak")
+    
+    data = await request.json()
+    chapter = db.query(Chapter).first()
+    
+    # Update settings JSONB
+    settings = chapter.settings or {}
+    settings["wm_slides_config"] = data
+    chapter.settings = settings
+    
+    db.add(chapter)
+    db.commit()
+    
+    return {"status": "ok", "message": "Konfigurasi slide berhasil disimpan"}
+
 
 # ============================================
 # AUTH API
@@ -193,6 +243,51 @@ async def health(db: Session = Depends(get_db)):
         "active_forms": db.query(FormTemplate).filter_by(is_active=True).count(),
         "published_edu": db.query(EduContent).filter_by(is_published=True).count()
     }
+
+@app.post("/api/admin/debug-upload")
+async def debug_upload(file: UploadFile = File(...), user: Member = Depends(require_auth)):
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Akses ditolak")
+    os.makedirs("static/uploads/debug", exist_ok=True)
+    filepath = f"static/uploads/debug/{file.filename}"
+    content = await file.read()
+    with open(filepath, "wb") as f:
+        f.write(content)
+    return {"status": "SAVED", "filename": file.filename, "exists": os.path.exists(filepath)}
+
+@app.get("/api/admin/debug-upload")
+async def debug_upload_get():
+    return {"error": "You sent a GET request, but this endpoint requires a POST with a file."}
+
+@app.get("/api/admin/debug-list")
+async def debug_list(user: Member = Depends(require_auth)):
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Akses ditolak")
+    # List files in the debug directory to confirm they are there
+    path = "static/uploads/debug"
+    if not os.path.exists(path):
+        return {"files": []}
+    return {"files": os.listdir(path)}
+
+@app.get("/api/admin/debug-clear")
+async def debug_clear(user: Member = Depends(require_auth)):
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Akses ditolak")
+    # Delete all files in the debug directory
+    path = "static/uploads/debug"
+    if os.path.exists(path):
+        import shutil
+        for filename in os.listdir(path):
+            file_path = os.path.join(path, filename)
+            try:
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+            except Exception:
+                pass
+    return {"status": "CLEANED"}
+
 
 @app.exception_handler(status.HTTP_401_UNAUTHORIZED)
 async def unauthorized_exception_handler(request: Request, exc: HTTPException):
