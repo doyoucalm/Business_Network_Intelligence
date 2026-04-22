@@ -26,16 +26,8 @@ async def roles_page(request: Request, db: Session = Depends(get_db), user: Memb
     role_map = {r.role: str(r.member_id) for r in active_roles}
     
     return templates.TemplateResponse(
-        "admin/roles.html",
-        {
-            "request": request,
-            "chapter": chapter,
-            "members": members,
-            "lt_roles": LT_ROLES,
-            "role_map": role_map,
-            "user": user,
-            "current_term": "2025/2026"
-        }
+        request, "admin/roles.html",
+        {"chapter": chapter, "members": members, "lt_roles": LT_ROLES, "role_map": role_map, "user": user, "current_term": "2025/2026"}
     )
 
 async def assign_roles_api(request: Request, db: Session = Depends(get_db), user: Member = Depends(require_auth)):

@@ -19,8 +19,8 @@ async def meetings_page(request: Request, db: Session = Depends(get_db), user: M
     members = db.query(Member).filter_by(membership_status="active").order_by(Member.full_name).all()
     
     return templates.TemplateResponse(
-        "admin/meetings.html", 
-        {"request": request, "chapter": chapter, "meetings": meetings, "members": members, "user": user}
+        request, "admin/meetings.html",
+        {"chapter": chapter, "meetings": meetings, "members": members, "user": user}
     )
 
 async def create_meeting_api(request: Request, db: Session = Depends(get_db), user: Member = Depends(require_auth)):
@@ -67,15 +67,8 @@ async def attendance_page(meeting_id: str, request: Request, db: Session = Depen
     attendance_map = {str(a.member_id): a.status for a in attendance_records}
     
     return templates.TemplateResponse(
-        "admin/attendance.html",
-        {
-            "request": request,
-            "chapter": chapter,
-            "meeting": meeting,
-            "members": members,
-            "attendance_map": attendance_map,
-            "user": user
-        }
+        request, "admin/attendance.html",
+        {"chapter": chapter, "meeting": meeting, "members": members, "attendance_map": attendance_map, "user": user}
     )
 
 async def save_attendance_api(request: Request, db: Session = Depends(get_db), user: Member = Depends(require_auth)):

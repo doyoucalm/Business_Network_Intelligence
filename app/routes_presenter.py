@@ -273,6 +273,6 @@ async def presenter_view(meeting_id: str, request: Request, db: Session = Depend
     slides.append({"type": "static", "template": "thank_visitors", "data": {}})
 
     return templates.TemplateResponse(
-        "presenter.html",
-        {"request": request, "chapter": chapter, "meeting": meeting, "slides": slides, "user": user}
+        request, "presenter.html",
+        {"chapter": chapter, "meeting": meeting, "slides": slides, "user": user}
     )

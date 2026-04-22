@@ -34,8 +34,8 @@ async def cards_list_page(request: Request, db: Session = Depends(get_db), user:
                 status_map[str(m.id)] = "red"
                 
     return templates.TemplateResponse(
-        "admin/cards_list.html",
-        {"request": request, "chapter": chapter, "members": members, "status_map": status_map, "user": user}
+        request, "admin/cards_list.html",
+        {"chapter": chapter, "members": members, "status_map": status_map, "user": user}
     )
 
 async def card_editor_page(member_id: str, request: Request, db: Session = Depends(get_db), user: Member = Depends(require_auth)):
@@ -56,8 +56,8 @@ async def card_editor_page(member_id: str, request: Request, db: Session = Depen
         
     chapter = db.query(Chapter).first()
     return templates.TemplateResponse(
-        "admin/card_editor.html",
-        {"request": request, "chapter": chapter, "member": member, "p": presentation, "user": user}
+        request, "admin/card_editor.html",
+        {"chapter": chapter, "member": member, "p": presentation, "user": user}
     )
 
 async def save_card_api(member_id: str, request: Request, db: Session = Depends(get_db), user: Member = Depends(require_auth)):
