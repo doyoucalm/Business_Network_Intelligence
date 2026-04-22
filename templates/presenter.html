@@ -64,53 +64,7 @@
     <div class="slides-container" id="slidesContainer">
         {% for slide in slides %}
         <div class="slide {{ 'active' if loop.first else '' }}" id="slide-{{ loop.index0 }}">
-            {% if slide.template == 'wm_title' %}
-                <div class="title-slide">
-                    <p style="color: var(--bni-red); font-weight: bold; font-size: 1.5rem; margin-bottom: 0;">{{ chapter.name }} HUB</p>
-                    <h1>{{ slide.data.theme or 'Weekly Meeting' }}</h1>
-                    <h2>{{ slide.data.date }}</h2>
-                </div>
-            {% elif slide.template == 'member_card' %}
-                {% set m = slide.data.member %}
-                {% set p = slide.data.presentation %}
-                <div class="member-card-layout">
-                    <div class="card-col">
-                        <img class="m-photo" src="{{ m.photo_url or 'https://ui-avatars.com/api/?name=' + m.full_name + '&size=512' }}">
-                        <div class="m-name">{{ m.full_name }}</div>
-                        <div class="m-class">{{ m.classification }}</div>
-                    </div>
-                    <div class="card-col">
-                        <div class="list-box">
-                            <h3>Produk & Layanan</h3>
-                            <ul>
-                                {% for item in p.products_services %}<li>{{ item }}</li>{% endfor %}
-                            </ul>
-                            <h3 style="margin-top: 2rem;">Mencari Referral</h3>
-                            <ul>
-                                {% for item in p.looking_for %}<li>{{ item }}</li>{% endfor %}
-                            </ul>
-                        </div>
-                    </div>
-                    <div class="card-col">
-                        <div class="canvas-area">
-                            {% for img in p.product_images %}
-                                <img src="{{ img }}">
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-                {% if slide.data.next_presenter %}
-                <div class="next-presenter">
-                    <div class="label">NEXT PRESENTER:</div>
-                    <div class="name">{{ slide.data.next_presenter.full_name }}</div>
-                </div>
-                {% endif %}
-            {% else %}
-                <div style="text-align: center;">
-                    <h1 style="color: var(--bni-red);">{{ slide.template|replace('_', ' ')|upper }}</h1>
-                    <p>Template details pending implementation</p>
-                </div>
-            {% endif %}
+            {% include "presenter/slide_" + slide.template + ".html" %}
         </div>
         {% endfor %}
     </div>

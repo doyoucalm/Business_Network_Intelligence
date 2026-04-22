@@ -1,0 +1,23 @@
+<div style="width: 90%; max-width: 1200px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 3rem;">
+        <div>
+            <h2 style="color: var(--bni-red); text-transform: uppercase; letter-spacing: 5px;">Networking Education</h2>
+            <h1 style="font-size: 4.5rem; margin-top: 1rem;">{{ slide.data.title or 'Education Moment' }}</h1>
+        </div>
+        {% if slide.data.presenter %}
+        <div style="text-align: right;">
+            <div style="font-size: 1.2rem; opacity: 0.6;">Presented by:</div>
+            <div style="font-size: 2.2rem; font-weight: bold; color: var(--bni-red);">{{ slide.data.presenter }}</div>
+        </div>
+        {% endif %}
+    </div>
+    <div style="background: rgba(255,255,255,0.05); padding: 4rem; border-radius: 30px; min-height: 400px; font-size: 1.8rem; line-height: 1.6;">
+        {% if slide.data.content %}
+            {{ slide.data.content | safe }}
+        {% else %}
+            <div style="display: flex; align-items: center; justify-content: center; height: 100%; opacity: 0.3;">
+                [Isi Education Moment Muncul di Sini]
+            </div>
+        {% endif %}
+    </div>
+</div>

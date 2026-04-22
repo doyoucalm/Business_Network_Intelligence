@@ -1,0 +1,22 @@
+<div style="width: 90%; max-width: 1300px; display: grid; grid-template-columns: 1fr 1.5fr; gap: 4rem; align-items: center;">
+    <div>
+        <h1 style="font-size: 4rem; color: var(--bni-red); line-height: 1;">7 BNI Core Values</h1>
+        <p style="font-size: 1.8rem; opacity: 0.7; margin-top: 2rem;">Fondasi dari kesuksesan kita bersama di Mahardika.</p>
+        
+        {% if slide.data.presenter_name %}
+        <div style="margin-top: 4rem; padding: 2rem; background: rgba(255,255,255,0.05); border-radius: 15px; border-left: 5px solid var(--bni-red);">
+            <div style="font-size: 1rem; opacity: 0.6; text-transform: uppercase;">Pembaca Hari Ini:</div>
+            <div style="font-size: 2rem; font-weight: bold;">{{ slide.data.presenter_name }}</div>
+        </div>
+        {% endif %}
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr; gap: 0.8rem;">
+        <div style="background: rgba(207, 32, 48, 0.1); padding: 1.2rem 2rem; border-radius: 10px; font-size: 1.6rem; border-left: 4px solid var(--bni-red);">1. Givers Gain®</div>
+        <div style="background: rgba(255, 255, 255, 0.05); padding: 1.2rem 2rem; border-radius: 10px; font-size: 1.6rem;">2. Building Relationships</div>
+        <div style="background: rgba(255, 255, 255, 0.05); padding: 1.2rem 2rem; border-radius: 10px; font-size: 1.6rem;">3. Lifelong Learning</div>
+        <div style="background: rgba(255, 255, 255, 0.05); padding: 1.2rem 2rem; border-radius: 10px; font-size: 1.6rem;">4. Traditions + Innovation</div>
+        <div style="background: rgba(255, 255, 255, 0.05); padding: 1.2rem 2rem; border-radius: 10px; font-size: 1.6rem;">5. Positive Attitude</div>
+        <div style="background: rgba(255, 255, 255, 0.05); padding: 1.2rem 2rem; border-radius: 10px; font-size: 1.6rem;">6. Accountability</div>
+        <div style="background: rgba(255, 255, 255, 0.05); padding: 1.2rem 2rem; border-radius: 10px; font-size: 1.6rem;">7. Recognition</div>
+    </div>
+</div>

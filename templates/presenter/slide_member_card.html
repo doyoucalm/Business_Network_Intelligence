@@ -1,0 +1,51 @@
+{% set m = slide.data.member %}
+{% set p = slide.data.presentation %}
+<div class="member-card-layout">
+    <div class="card-col">
+        <div style="position: relative;">
+            <img class="m-photo" src="{{ m.photo_url or 'https://ui-avatars.com/api/?name=' + m.full_name + '&size=512' }}">
+            {% if m.is_gold_member %}
+            <div style="position: absolute; top: 10px; right: 10px; background: #FFD700; color: black; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 0.8rem; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">GOLD CLUB</div>
+            {% endif %}
+        </div>
+        <div class="m-name">{{ m.full_name }}</div>
+        <div class="m-class">{{ m.classification }}</div>
+        <div style="font-size: 1.1rem; opacity: 0.6; margin-top: 5px;">{{ m.company }}</div>
+    </div>
+    
+    <div class="card-col">
+        <div class="list-box">
+            <h3>Produk & Layanan</h3>
+            <ul style="margin-bottom: 2rem;">
+                {% for item in p.products_services %}<li>{{ item }}</li>{% endfor %}
+                {% if not p.products_services %}<li style="opacity: 0.3;">Not specified</li>{% endif %}
+            </ul>
+            
+            <h3 style="margin-top: 2rem; color: #4CAF50;">Mencari Referral (Specific)</h3>
+            <ul>
+                {% for item in p.looking_for %}<li>{{ item }}</li>{% endfor %}
+                {% if not p.looking_for %}<li style="opacity: 0.3;">Not specified</li>{% endif %}
+            </ul>
+        </div>
+    </div>
+    
+    <div class="card-col">
+        <div class="canvas-area">
+            {% for img in p.product_images %}
+                <img src="{{ img }}">
+            {% endfor %}
+            {% for i in range(4 - (p.product_images|length)) %}
+                <div style="background: #111; display: flex; align-items: center; justify-content: center; color: #222;">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% if slide.data.next_presenter %}
+<div class="next-presenter">
+    <div class="label">NEXT PRESENTER:</div>
+    <div class="name">{{ slide.data.next_presenter.full_name }}</div>
+</div>
+{% endif %}

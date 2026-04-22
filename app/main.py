@@ -32,7 +32,6 @@ app.get("/admin/cards")(cards_list_page)
 app.get("/admin/cards/{member_id}")(card_editor_page)
 app.post("/api/admin/cards/{member_id}")(save_card_api)
 app.post("/api/admin/upload/image/{member_id}")(upload_image_api)
-app.get("/presenter/{meeting_id}")(presenter_view)
 
 # ============================================
 # PAGES
@@ -74,11 +73,11 @@ async def members_directory(request: Request, db: Session = Depends(get_db), use
     )
 
 @app.get("/presenter/{meeting_id}")
-async def presenter_view(meeting_id: str, request: Request, db: Session = Depends(get_db), user: Member = Depends(require_auth)):
+async def presenter_view_page(meeting_id: str, request: Request, db: Session = Depends(get_db), user: Member = Depends(require_auth)):
     meeting = db.query(Meeting).filter_by(id=meeting_id).first()
     if not meeting:
         raise HTTPException(status_code=404, detail="Meeting tidak ditemukan")
-    
+
     chapter = db.query(Chapter).first()
     chapter_settings = chapter.settings or {}
     slides_config = chapter_settings.get("wm_slides_config", {})
@@ -91,7 +90,7 @@ async def presenter_view(meeting_id: str, request: Request, db: Session = Depend
         "is_admin": is_admin(user, db)
     }
     return templates.TemplateResponse(
-        request=request, name="wm/presenter.html", context=context
+        request=request, name="presenter.html", context=context
     )
 
 @app.get("/api/presenter/{meeting_id}/state")

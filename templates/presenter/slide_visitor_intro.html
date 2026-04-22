@@ -1,0 +1,18 @@
+<div style="text-align: center;">
+    <h1 style="font-size: 4.5rem; color: var(--bni-red); margin-bottom: 3rem;">Welcome Our Visitors</h1>
+    <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 2rem;">
+        {% for visitor in slide.data.visitors %}
+        <div style="background: rgba(255,255,255,0.05); padding: 2rem; border-radius: 20px; width: 300px; border-top: 5px solid var(--bni-red);">
+            <div style="font-size: 1.8rem; font-weight: bold; margin-bottom: 0.5rem;">{{ visitor.full_name }}</div>
+            <div style="font-size: 1.1rem; color: var(--bni-red); font-weight: bold;">{{ visitor.classification }}</div>
+            <div style="font-size: 1rem; opacity: 0.6; margin-top: 10px;">{{ visitor.company }}</div>
+            <div style="font-size: 0.9rem; margin-top: 15px; padding-top: 15px; border-top: 1px solid #333;">
+                <span style="opacity: 0.5;">Invited by:</span> {{ visitor.invited_by }}
+            </div>
+        </div>
+        {% endfor %}
+        {% if not slide.data.visitors %}
+            <div style="font-size: 2rem; opacity: 0.3; margin-top: 5rem;">No visitors today.</div>
+        {% endif %}
+    </div>
+</div>
