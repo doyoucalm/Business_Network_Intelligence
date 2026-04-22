@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Member Directory - {{ chapter.name }}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .members-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        .member-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-left: 5px solid var(--bni-red);
+            transition: transform 0.2s;
+        }
+        .member-card:hover {
+            transform: translateY(-5px);
+        }
+        .member-name {
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+            color: var(--text-main);
+        }
+        .member-classification {
+            color: var(--bni-red);
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        .member-company {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 15px;
+        }
+        .member-contact {
+            display: flex;
+            gap: 10px;
+            font-size: 0.85rem;
+        }
+        .contact-btn {
+            padding: 5px 10px;
+            border-radius: 5px;
+            text-decoration: none;
+            background: var(--bg-color);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+        }
+        .search-box {
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 25px;
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            color: var(--text-main);
+        }
+        .gold-badge {
+            background: #FFD700;
+            color: #000;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body class="light-mode">
+    <nav style="padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color);">
+        <a href="/" style="text-decoration: none; font-weight: bold; color: var(--bni-red);">← {{ chapter.name }} Hub</a>
+        <div>
+            <span>{{ user.full_name }}</span>
+        </div>
+    </nav>
+
+    <header style="text-align: center; padding: 40px 20px;">
+        <h1>Member Directory</h1>
+        <p>Connecting {{ members|length }} business professionals in {{ chapter.name }}</p>
+    </header>
+
+    <div class="search-box">
+        <input type="text" id="memberSearch" placeholder="Search by name, company or classification..." onkeyup="filterMembers()">
+    </div>
+
+    <div class="members-grid" id="membersGrid">
+        {% for m in members %}
+        <div class="member-card" data-search="{{ m.full_name.lower() }} {{ m.company.lower() if m.company else '' }} {{ m.classification.lower() if m.classification else '' }}">
+            <div class="member-name">
+                {{ m.full_name }}
+                {% if m.is_gold_member %}<span class="gold-badge">GOLD</span>{% endif %}
+            </div>
+            <div class="member-classification">{{ m.classification or 'N/A' }}</div>
+            <div class="member-company">{{ m.company or 'N/A' }}</div>
+            <div class="member-contact">
+                {% if m.phone %}
+                <a href="https://wa.me/{{ m.phone|replace(' ', '')|replace('-', '') }}" class="contact-btn" target="_blank">WhatsApp</a>
+                {% endif %}
+                {% if m.email %}
+                <a href="mailto:{{ m.email }}" class="contact-btn">Email</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        function filterMembers() {
+            const query = document.getElementById('memberSearch').value.toLowerCase();
+            const cards = document.querySelectorAll('.member-card');
+            
+            cards.forEach(card => {
+                const searchData = card.getAttribute('data-search');
+                if (searchData.includes(query)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

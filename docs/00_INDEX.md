@@ -23,6 +23,16 @@ others when needed. If you are an AI assistant working on this project, read
 | `08_DATA_FLOW.md` | How data enters, transforms, outputs | Building pipelines, forms, uploads |
 | `09_BOT_SPEC.md` | Telegram & WhatsApp bot specifications | Building bot features |
 | `10_CHANGELOG.md` | Decision log, progress, changes | Tracking history |
+| `11_SESSION_WRAPUP.md` | Prior session wrap | Reference |
+| `12_REFACTOR_PLAN.md` | Multi-stage refactor plan | Stage planning |
+| `13_WM_PRESENTER_SPEC.md` | Stage 3 — WM Presenter build spec | Building Stage 3 |
+| `14_HANDOFF_2026-04-22.md` | Today's session record + 5-Q answers + roadmap | Resuming work |
+
+## Learnings
+
+| File | Topic |
+|------|-------|
+| `learnings/2026-04-22_member_lifecycle.md` | Member exit/join not handled — gap analysis + fix pattern |
 
 ## Context Files
 

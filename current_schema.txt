@@ -1,0 +1,296 @@
+ action_items         | id                    | uuid
+ action_items         | csm_meeting_id        | uuid
+ action_items         | chapter_id            | uuid
+ action_items         | description           | text
+ action_items         | assigned_to_member_id | uuid
+ action_items         | assigned_to_name      | character varying
+ action_items         | due_date              | date
+ action_items         | status                | character varying
+ action_items         | completed_date        | date
+ action_items         | notes                 | text
+ action_items         | created_at            | timestamp with time zone
+ action_items         | updated_at            | timestamp with time zone
+ activity_log         | id                    | uuid
+ activity_log         | chapter_id            | uuid
+ activity_log         | actor_id              | uuid
+ activity_log         | action                | character varying
+ activity_log         | target_type           | character varying
+ activity_log         | target_id             | uuid
+ activity_log         | data                  | jsonb
+ activity_log         | created_at            | timestamp without time zone
+ announcements        | id                    | uuid
+ announcements        | chapter_id            | uuid
+ announcements        | meeting_id            | uuid
+ announcements        | title                 | character varying
+ announcements        | content               | text
+ announcements        | priority              | integer
+ announcements        | type                  | character varying
+ announcements        | start_date            | date
+ announcements        | expire_date           | date
+ announcements        | is_active             | boolean
+ announcements        | created_by            | uuid
+ announcements        | created_at            | timestamp with time zone
+ announcements        | updated_at            | timestamp with time zone
+ attendance           | id                    | uuid
+ attendance           | meeting_id            | uuid
+ attendance           | member_id             | uuid
+ attendance           | status                | character varying
+ attendance           | meta                  | jsonb
+ attendance           | recorded_at           | timestamp without time zone
+ chapter_content      | id                    | uuid
+ chapter_content      | chapter_id            | uuid
+ chapter_content      | content_type          | character varying
+ chapter_content      | title                 | character varying
+ chapter_content      | content               | jsonb
+ chapter_content      | is_active             | boolean
+ chapter_content      | created_at            | timestamp with time zone
+ chapter_content      | updated_at            | timestamp with time zone
+ chapter_targets      | id                    | uuid
+ chapter_targets      | chapter_id            | uuid
+ chapter_targets      | period_label          | character varying
+ chapter_targets      | period_start          | date
+ chapter_targets      | period_end            | date
+ chapter_targets      | metric                | character varying
+ chapter_targets      | target_value          | numeric
+ chapter_targets      | created_at            | timestamp with time zone
+ chapters             | id                    | uuid
+ chapters             | name                  | character varying
+ chapters             | city                  | character varying
+ chapters             | region                | character varying
+ chapters             | meeting_day           | character varying
+ chapters             | meeting_time          | character varying
+ chapters             | venue                 | text
+ chapters             | status                | character varying
+ chapters             | settings              | jsonb
+ chapters             | created_at            | timestamp without time zone
+ csm_meetings         | id                    | uuid
+ csm_meetings         | chapter_id            | uuid
+ csm_meetings         | date                  | date
+ csm_meetings         | location              | character varying
+ csm_meetings         | attendees             | jsonb
+ csm_meetings         | agenda                | jsonb
+ csm_meetings         | vp_report             | jsonb
+ csm_meetings         | visitor_report        | jsonb
+ csm_meetings         | mc_report             | jsonb
+ csm_meetings         | education_report      | jsonb
+ csm_meetings         | mentor_report         | jsonb
+ csm_meetings         | event_report          | jsonb
+ csm_meetings         | notes                 | text
+ csm_meetings         | next_meeting_date     | date
+ csm_meetings         | created_at            | timestamp with time zone
+ csm_meetings         | updated_at            | timestamp with time zone
+ data_imports         | id                    | uuid
+ data_imports         | chapter_id            | uuid
+ data_imports         | source_type           | character varying
+ data_imports         | filename              | character varying
+ data_imports         | file_path             | character varying
+ data_imports         | raw_data              | jsonb
+ data_imports         | mapped_data           | jsonb
+ data_imports         | import_status         | character varying
+ data_imports         | records_total         | integer
+ data_imports         | records_imported      | integer
+ data_imports         | records_skipped       | integer
+ data_imports         | records_error         | integer
+ data_imports         | error_log             | jsonb
+ data_imports         | imported_by           | character varying
+ data_imports         | created_at            | timestamp with time zone
+ data_imports         | completed_at          | timestamp with time zone
+ edu_contents         | id                    | uuid
+ edu_contents         | chapter_id            | uuid
+ edu_contents         | title                 | character varying
+ edu_contents         | slug                  | character varying
+ edu_contents         | description           | text
+ edu_contents         | slides                | jsonb
+ edu_contents         | is_published          | boolean
+ edu_contents         | created_by            | uuid
+ edu_contents         | created_at            | timestamp without time zone
+ edu_contents         | updated_at            | timestamp without time zone
+ form_responses       | id                    | uuid
+ form_responses       | form_id               | uuid
+ form_responses       | respondent_id         | uuid
+ form_responses       | respondent_name       | character varying
+ form_responses       | respondent_email      | character varying
+ form_responses       | answers               | jsonb
+ form_responses       | meta                  | jsonb
+ form_responses       | created_at            | timestamp without time zone
+ form_templates       | id                    | uuid
+ form_templates       | chapter_id            | uuid
+ form_templates       | name                  | character varying
+ form_templates       | slug                  | character varying
+ form_templates       | description           | text
+ form_templates       | form_type             | character varying
+ form_templates       | questions             | jsonb
+ form_templates       | settings              | jsonb
+ form_templates       | is_active             | boolean
+ form_templates       | created_by            | uuid
+ form_templates       | created_at            | timestamp without time zone
+ form_templates       | updated_at            | timestamp without time zone
+ meeting_activity     | id                    | uuid
+ meeting_activity     | meeting_id            | uuid
+ meeting_activity     | member_id             | uuid
+ meeting_activity     | referrals_given       | integer
+ meeting_activity     | referrals_received    | integer
+ meeting_activity     | referrals_outside     | integer
+ meeting_activity     | tyfcb_amount          | numeric
+ meeting_activity     | one_to_ones           | integer
+ meeting_activity     | visitors_brought      | integer
+ meeting_activity     | ceu_credits           | integer
+ meeting_activity     | testimonials_given    | integer
+ meeting_activity     | notes                 | text
+ meeting_activity     | source                | character varying
+ meeting_activity     | created_at            | timestamp with time zone
+ meeting_activity     | updated_at            | timestamp with time zone
+ meetings             | id                    | uuid
+ meetings             | chapter_id            | uuid
+ meetings             | meeting_date          | date
+ meetings             | meeting_type          | character varying
+ meetings             | is_locked             | boolean
+ meetings             | meta                  | jsonb
+ meetings             | created_at            | timestamp without time zone
+ member_achievements  | id                    | uuid
+ member_achievements  | chapter_id            | uuid
+ member_achievements  | member_id             | uuid
+ member_achievements  | achievement_type      | character varying
+ member_achievements  | title                 | character varying
+ member_achievements  | description           | text
+ member_achievements  | criteria_snapshot     | jsonb
+ member_achievements  | achieved_at           | date
+ member_achievements  | announced_at          | timestamp with time zone
+ member_achievements  | announced_meeting_id  | uuid
+ member_achievements  | created_at            | timestamp with time zone
+ member_presentations | id                    | uuid
+ member_presentations | member_id             | uuid
+ member_presentations | version               | integer
+ member_presentations | title                 | character varying
+ member_presentations | focus_product         | character varying
+ member_presentations | description           | text
+ member_presentations | products_services     | jsonb
+ member_presentations | looking_for           | jsonb
+ member_presentations | product_images        | jsonb
+ member_presentations | is_active             | boolean
+ member_presentations | rotation_order        | integer
+ member_presentations | created_at            | timestamp with time zone
+ member_presentations | updated_at            | timestamp with time zone
+ member_reviews       | id                    | uuid
+ member_reviews       | chapter_id            | uuid
+ member_reviews       | member_id             | uuid
+ member_reviews       | review_cycle          | integer
+ member_reviews       | scheduled_date        | date
+ member_reviews       | actual_date           | date
+ member_reviews       | pic_member_id         | uuid
+ member_reviews       | score_percentage      | integer
+ member_reviews       | keterangan            | text
+ member_reviews       | solusi                | text
+ member_reviews       | status                | character varying
+ member_reviews       | decision              | character varying
+ member_reviews       | raw_data              | jsonb
+ member_reviews       | created_at            | timestamp with time zone
+ member_reviews       | updated_at            | timestamp with time zone
+ member_roles         | id                    | uuid
+ member_roles         | member_id             | uuid
+ member_roles         | chapter_id            | uuid
+ member_roles         | role                  | character varying
+ member_roles         | committee             | character varying
+ member_roles         | term_start            | date
+ member_roles         | term_end              | date
+ member_roles         | is_active             | boolean
+ member_roles         | created_at            | timestamp with time zone
+ members              | id                    | uuid
+ members              | chapter_id            | uuid
+ members              | full_name             | character varying
+ members              | email                 | character varying
+ members              | phone                 | character varying
+ members              | bni_classification    | character varying
+ members              | company_name          | character varying
+ members              | membership_status     | character varying
+ members              | role                  | character varying
+ members              | join_date             | date
+ members              | renewal_date          | date
+ members              | password_hash         | character varying
+ members              | is_activated          | boolean
+ members              | business_profile      | jsonb
+ members              | profile_completed     | boolean
+ members              | meta                  | jsonb
+ members              | created_at            | timestamp without time zone
+ members              | updated_at            | timestamp without time zone
+ palms_snapshots      | id                    | uuid
+ palms_snapshots      | chapter_id            | uuid
+ palms_snapshots      | member_id             | uuid
+ palms_snapshots      | period_label          | character varying
+ palms_snapshots      | period_start          | date
+ palms_snapshots      | period_end            | date
+ palms_snapshots      | present_count         | integer
+ palms_snapshots      | absent_count          | integer
+ palms_snapshots      | medical_count         | integer
+ palms_snapshots      | late_count            | integer
+ palms_snapshots      | substitute_count      | integer
+ palms_snapshots      | referrals_given       | integer
+ palms_snapshots      | referrals_received    | integer
+ palms_snapshots      | referrals_outside     | integer
+ palms_snapshots      | visitors_brought      | integer
+ palms_snapshots      | one_to_ones           | integer
+ palms_snapshots      | tyfcb_amount          | numeric
+ palms_snapshots      | ceu_credits           | integer
+ palms_snapshots      | raw_data              | jsonb
+ palms_snapshots      | import_id             | uuid
+ palms_snapshots      | created_at            | timestamp with time zone
+ power_teams          | id                    | uuid
+ power_teams          | chapter_id            | uuid
+ power_teams          | name                  | character varying
+ power_teams          | description           | text
+ power_teams          | target_customer       | jsonb
+ power_teams          | member_ids            | jsonb
+ power_teams          | is_active             | boolean
+ power_teams          | meta                  | jsonb
+ power_teams          | created_at            | timestamp without time zone
+ referral_needs       | id                    | uuid
+ referral_needs       | member_id             | uuid
+ referral_needs       | target_description    | character varying
+ referral_needs       | priority              | integer
+ referral_needs       | status                | character varying
+ referral_needs       | version               | integer
+ referral_needs       | fulfilled_date        | date
+ referral_needs       | notes                 | text
+ referral_needs       | created_at            | timestamp with time zone
+ referral_needs       | updated_at            | timestamp with time zone
+ referrals            | id                    | uuid
+ referrals            | chapter_id            | uuid
+ referrals            | giver_id              | uuid
+ referrals            | receiver_id           | uuid
+ referrals            | status                | character varying
+ referrals            | data                  | jsonb
+ referrals            | created_at            | timestamp without time zone
+ scores               | id                    | uuid
+ scores               | scope_type            | character varying
+ scores               | scope_id              | uuid
+ scores               | score_type            | character varying
+ scores               | value                 | numeric
+ scores               | details               | jsonb
+ scores               | computed_at           | timestamp without time zone
+ sponsorships         | id                    | uuid
+ sponsorships         | chapter_id            | uuid
+ sponsorships         | sponsor_id            | uuid
+ sponsorships         | sponsored_member_id   | uuid
+ sponsorships         | sponsored_name        | character varying
+ sponsorships         | sponsor_date          | date
+ sponsorships         | status                | character varying
+ sponsorships         | raw_data              | jsonb
+ sponsorships         | created_at            | timestamp with time zone
+ uploaded_files       | id                    | uuid
+ uploaded_files       | filename              | character varying
+ uploaded_files       | file_type             | character varying
+ uploaded_files       | uploaded_by           | uuid
+ uploaded_files       | status                | character varying
+ uploaded_files       | row_count             | integer
+ uploaded_files       | parsed_data           | jsonb
+ uploaded_files       | import_log            | jsonb
+ uploaded_files       | created_at            | timestamp without time zone
+ visitors             | id                    | uuid
+ visitors             | chapter_id            | uuid
+ visitors             | full_name             | character varying
+ visitors             | invited_by_id         | uuid
+ visitors             | status                | character varying
+ visitors             | visit_data            | jsonb
+ visitors             | meta                  | jsonb
+ visitors             | created_at            | timestamp without time zone
+
