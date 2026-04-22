@@ -34,7 +34,6 @@ class Member(Base):
     classification = Column(String(150))
     company = Column(String(200))
     membership_status = Column(String(20), default="active")
-    role = Column(String(20), default="member") 
     join_date = Column(Date)
     renewal_date = Column(Date)
     password_hash = Column(String(255))
