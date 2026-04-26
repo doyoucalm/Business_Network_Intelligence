@@ -164,7 +164,9 @@
         const totalSlides = {{ visible_slides|length }};
         let currentIdx = 0;
 
-        function showSlide(idx) {
+        let lastLocalNavAt = 0;
+
+        function showSlide(idx, fromPoll) {
             if (idx < 0 || idx >= totalSlides) return;
             document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -174,6 +176,15 @@
             if (tabEl) { tabEl.classList.add('active'); tabEl.scrollIntoView({block:'nearest', inline:'center'}); }
             currentIdx = idx;
             document.getElementById('currentIdx').innerText = idx + 1;
+            if (!fromPoll) {
+                lastLocalNavAt = Date.now();
+                // Sync to server so other viewers (and the next poll) follow.
+                fetch('/api/presenter/{{ meeting.id }}/state', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ current_slide_index: idx })
+                }).catch(() => {}); // viewers without admin role will 403; ignore.
+            }
         }
         function nextSlide() { showSlide(currentIdx + 1); }
         function prevSlide() { showSlide(currentIdx - 1); }
@@ -198,11 +209,13 @@
 
         // 5s polling for state sync (admin-driven)
         async function pollState() {
+            // Don't override the user if they just navigated locally (within last 8s).
+            if (Date.now() - lastLocalNavAt < 8000) return;
             try {
                 const res = await fetch('/api/presenter/{{ meeting.id }}/state');
                 const state = await res.json();
                 if (state.current_slide_index !== undefined && state.current_slide_index !== currentIdx) {
-                    showSlide(state.current_slide_index);
+                    showSlide(state.current_slide_index, true);
                 }
             } catch (e) {}
         }
