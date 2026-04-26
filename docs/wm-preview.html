@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BNI Mahardika - Weekly Meeting</title>
+    <style>
+        :root {
+            --primary: #CC2229;
+            --text-dark: #222222;
+            --divider-green: #006633;
+            --bg-white: #FFFFFF;
+            --bg-dark: #1a1a1a;
+            --admin-panel-width: 320px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
+
+        body {
+            background-color: var(--bg-dark);
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+            transition: margin-right 0.3s ease;
+        }
+
+        body.admin-open { margin-right: var(--admin-panel-width); }
+
+        /* Top Navigation Bar */
+        .top-nav {
+            background: #2c2c2c;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .chapter-info h1 { font-size: 1.1rem; color: #fff; font-weight: 600; }
+        .chapter-info p { font-size: 0.8rem; color: #aaa; }
+
+        .nav-controls { display: flex; gap: 8px; }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-secondary { background: #444; color: white; }
+        .btn-admin { background: #555; color: #ffc107; border: 1px solid #ffc107; }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        /* Tabs Navigation */
+        .slide-tabs {
+            display: flex;
+            justify-content: center;
+            padding: 15px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .tab {
+            padding: 8px 16px;
+            background: #333;
+            color: #ccc;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            border: 1px solid #444;
+            transition: 0.3s;
+        }
+        .tab.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        .tab.hidden-slide { opacity: 0.3; text-decoration: line-through; }
+
+        /* Slide Viewer */
+        .viewport {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            padding: 0 20px 40px;
+        }
+
+        .slide-frame {
+            width: 100%;
+            max-width: 1280px;
+            aspect-ratio: 16 / 9;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            position: relative;
+        }
+
+        .slide {
+            position: absolute;
+            inset: 0;
+            display: none;
+            color: var(--text-dark);
+        }
+        .slide.active { display: block; animation: fadeIn 0.4s ease-out; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* Edit Mode Styles */
+        [contenteditable="true"] {
+            outline: none;
+            position: relative;
+        }
+        body.admin-mode [contenteditable="true"]:hover {
+            background: rgba(255, 193, 7, 0.1);
+            box-shadow: 0 0 0 2px #ffc107;
+            cursor: text;
+        }
+
+        /* COMMON SLIDE ELEMENTS */
+        .bni-logo-main { color: var(--primary); font-weight: 900; position: relative; }
+        .bni-logo-main::after { content: '®'; font-size: 0.4em; position: absolute; top: 0.1em; right: -0.5em; }
+
+        /* SLIDE 1: Open Networking */
+        .s1-header { padding: 5% 6% 2%; display: flex; justify-content: space-between; align-items: flex-start; }
+        .s1-title h1 { color: var(--primary); font-size: 3.5vw; line-height: 1.1; font-weight: 800; }
+        .s1-title h2 { color: var(--primary); font-size: 1.8vw; margin-top: 10px; font-weight: 700; }
+        .s1-logo-box { background: white; padding: 1.5vw 2vw; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center; border-radius: 4px; }
+        .s1-logo-box .bni { font-size: 4vw; margin-bottom: 5px; }
+        .s1-logo-box p { font-size: 0.8vw; color: #666; font-weight: 600; line-height: 1.2; }
+        .s1-divider { width: 88%; height: 4px; background: var(--divider-green); margin-left: 6%; }
+        .s1-content { padding: 3% 15% 3% 6%; font-size: 2.2vw; line-height: 1.5; }
+        .s1-content strong { color: var(--primary); }
+        .s1-list { margin-left: 3vw; margin-top: 1vw; }
+        .swoosh-container { position: absolute; bottom: 0; right: 0; width: 50%; height: 40%; overflow: hidden; pointer-events: none; }
+        .swoosh-light { position: absolute; bottom: -10%; right: -5%; width: 120%; height: 120%; background: #f5f5f5; border-top-left-radius: 100%; z-index: 1; }
+        .swoosh-dark { position: absolute; bottom: -15%; right: -10%; width: 100%; height: 100%; background: var(--primary); border-top-left-radius: 100%; z-index: 2; }
+        .s1-bottom-logo { position: absolute; bottom: 4%; left: 4%; font-size: 3.5vw; z-index: 5; }
+
+        /* SLIDE 2: Video Cover */
+        .s2-overlay { position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.8) 40%, rgba(255,255,255,0.2) 100%); z-index: 1; }
+        .s2-bg { position: absolute; inset: 0; background-position: center; background-size: cover; transition: background-image 0.5s; }
+        .s2-content { position: relative; z-index: 10; padding: 5% 6%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .s2-video-frame { width: 70%; aspect-ratio: 16/9; background: #000; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.4); border: 4px solid white; }
+        .s2-video-frame iframe { width: 100%; height: 100%; border: none; }
+        .s2-title { margin-top: 20px; font-size: 1.5vw; font-weight: 700; color: var(--text-dark); background: rgba(255,255,255,0.8); padding: 5px 20px; border-radius: 20px; }
+
+        /* SLIDE 3 & 4: Red Headers */
+        .red-header { background: var(--primary); height: 15%; width: 95%; margin-top: 4%; clip-path: polygon(0 0, 100% 0, 97% 100%, 0% 100%); display: flex; align-items: center; padding: 0 5%; color: white; }
+        .red-header .bni { font-size: 3vw; margin-right: 40px; }
+        .red-header h2 { font-size: 2.8vw; font-weight: 600; }
+        .s3-content { padding: 4% 15% 4% 10%; }
+        .s3-content h1 { font-size: 3.5vw; text-align: center; margin-bottom: 2%; font-weight: 800; }
+        .s3-list { list-style: none; }
+        .s3-item { font-size: 1.7vw; padding: 1.2vw 0; border-bottom: 1px solid #ddd; display: flex; align-items: center; }
+        .s3-item::before { content: '✓'; color: var(--primary); font-weight: bold; margin-right: 15px; }
+        .s4-disclaimer { padding: 2% 10%; text-align: center; }
+        .s4-disclaimer h3 { color: var(--primary); font-size: 2vw; margin-bottom: 15px; letter-spacing: 2px; }
+        .s4-text { font-size: 1.3vw; line-height: 1.4; color: #444; }
+        .s4-link { margin-top: 20px; font-weight: 700; color: var(--primary); font-size: 1.5vw; }
+
+        /* SLIDE 5: Stats */
+        .s5-top { background: var(--primary); height: 75%; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+        .s5-map { width: 70%; opacity: 0.2; filter: brightness(0) invert(1); }
+        .s5-logo { position: absolute; top: 10%; font-size: 6vw; color: white; }
+        .s5-bottom { background: white; height: 25%; display: flex; justify-content: space-around; align-items: center; padding: 0 5%; border-top: 8px solid #f0f0f0; }
+        .stat-box { text-align: center; }
+        .stat-box h3 { color: var(--primary); font-size: 3.5vw; font-weight: 800; }
+        .stat-box p { font-size: 1.4vw; font-weight: 600; color: #555; }
+
+        /* Admin Panel */
+        .admin-sidebar {
+            position: fixed;
+            top: 0;
+            right: calc(-1 * var(--admin-panel-width));
+            width: var(--admin-panel-width);
+            height: 100vh;
+            background: #252525;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+            z-index: 1000;
+            transition: right 0.3s ease;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        body.admin-open .admin-sidebar { right: 0; }
+        .admin-sidebar h2 { margin-bottom: 20px; color: #ffc107; font-size: 1.2rem; border-bottom: 1px solid #444; padding-bottom: 10px; }
+
+        .admin-section { margin-bottom: 25px; }
+        .admin-section h3 { font-size: 0.9rem; color: #aaa; text-transform: uppercase; margin-bottom: 12px; }
+
+        .slide-item {
+            display: flex;
+            align-items: center;
+            background: #333;
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            gap: 10px;
+        }
+        .slide-item span { flex-grow: 1; font-size: 0.9rem; }
+        .slide-control-btn {
+            background: #444; border: none; color: #ccc; cursor: pointer; padding: 4px; border-radius: 3px;
+        }
+        .slide-control-btn:hover { background: #555; color: white; }
+        .slide-control-btn.active { color: #ffc107; }
+
+        .admin-input-group { margin-bottom: 15px; }
+        .admin-input-group label { display: block; font-size: 0.8rem; color: #999; margin-bottom: 5px; }
+        .admin-input-group input {
+            width: 100%; background: #1a1a1a; border: 1px solid #444; color: white; padding: 8px; border-radius: 4px; font-size: 0.9rem;
+        }
+
+        .admin-footer { margin-top: auto; display: flex; flex-direction: column; gap: 10px; }
+        .save-btn { background: #28a745; color: white; padding: 12px; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; }
+        .save-btn:hover { background: #218838; }
+
+        /* Presentation Mode */
+        body.fullscreen .top-nav,
+        body.fullscreen .slide-tabs,
+        body.fullscreen .admin-sidebar { display: none !important; }
+        body.fullscreen { background: black; padding: 0; margin-right: 0 !important; }
+        body.fullscreen .viewport { padding: 0; }
+        body.fullscreen .slide-frame { max-width: 100vw; height: 100vh; border-radius: 0; }
+
+        .exit-fs {
+            position: fixed; bottom: 20px; right: 20px; z-index: 1000;
+            padding: 10px 20px; background: rgba(0,0,0,0.5); color: white;
+            border: 1px solid white; border-radius: 5px; cursor: pointer;
+            display: none;
+        }
+        body.fullscreen .exit-fs { display: block; }
+
+        /* Toggle Edit Mode Button */
+        .edit-mode-indicator {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255, 193, 7, 0.9);
+            color: #000;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            z-index: 1000;
+            display: none;
+        }
+        body.admin-mode .edit-mode-indicator { display: block; }
+    </style>
+</head>
+<body id="body">
+
+    <!-- Top Navigation -->
+    <div class="top-nav">
+        <div class="chapter-info">
+            <h1>BNI MAHARDIKA CHAPTER</h1>
+            <p>Weekly Meeting Dashboard • April 26, 2026</p>
+        </div>
+        <div class="nav-controls">
+            <button class="btn btn-admin" onclick="toggleAdminPanel()">⚙️ Admin Controls</button>
+            <button class="btn btn-secondary" onclick="toggleFullscreen()">📺 Fullscreen</button>
+            <button class="btn btn-primary" onclick="window.print()">🖨️ Export PDF</button>
+        </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <div class="slide-tabs" id="tabs-nav">
+        <!-- Rendered by JS -->
+    </div>
+
+    <!-- Slide Viewer -->
+    <div class="viewport">
+        <div class="slide-frame" id="slide-frame">
+
+            <!-- Slide 1: Open Networking -->
+            <div class="slide" data-id="slide1">
+                <div class="s1-header">
+                    <div class="s1-title">
+                        <h1 contenteditable="false" data-key="s1_h1">OPEN<br>NETWORKING</h1>
+                        <h2 contenteditable="false" data-key="s1_h2">PREPARE INTRODUCTION</h2>
+                    </div>
+                    <div class="s1-logo-box">
+                        <div class="bni bni-logo-main">BNI</div>
+                        <p>Mahardika Chapter<br>Jakarta Selatan</p>
+                    </div>
+                </div>
+                <div class="s1-divider"></div>
+                <div class="s1-content">
+                    <div contenteditable="false" data-key="s1_content">
+                        <p>Rename in <strong>Zoom</strong> according to the following format:</p>
+                        <p><strong>V | Name | Business Classification</strong></p>
+                        <p><strong>O | Chapter | Name | Business Classification</strong></p>
+                        <br>
+                        <p>Introduce yourself in the following order:</p>
+                        <ol class="s1-list">
+                            <li>Your Name</li>
+                            <li>Your Company</li>
+                            <li>Your Products / Services</li>
+                        </ol>
+                    </div>
+                </div>
+                <div class="swoosh-container">
+                    <div class="swoosh-light"></div>
+                    <div class="swoosh-dark"></div>
+                </div>
+                <div class="s1-bottom-logo bni bni-logo-main" style="color: white;">BNI</div>
+            </div>
+
+            <!-- Slide 2: Video Cover -->
+            <div class="slide" data-id="slide2">
+                <div class="s2-bg" id="s2-bg" style="background-image: url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070')"></div>
+                <div class="s2-overlay"></div>
+                <div class="s2-content">
+                    <div class="s2-video-frame">
+                        <iframe id="video-frame" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+                    </div>
+                    <div class="s2-title" contenteditable="false" data-key="s2_title">Weekly Meeting - Welcome Video</div>
+                </div>
+            </div>
+
+            <!-- Slide 3: Etiquettes -->
+            <div class="slide" data-id="slide3">
+                <div class="red-header">
+                    <div class="bni bni-logo-main">BNI</div>
+                    <h2 contenteditable="false" data-key="s3_header">Online Meeting</h2>
+                </div>
+                <div class="s3-content">
+                    <h1 contenteditable="false" data-key="s3_title">Etiquettes</h1>
+                    <div class="s3-list" contenteditable="false" data-key="s3_list">
+                        <div class="s3-item">Please mute your line, but keep your video on</div>
+                        <div class="s3-item">Be sure you are using quality internet, headset and webcam</div>
+                        <div class="s3-item">Be sure you're in front of a professional background</div>
+                        <div class="s3-item">Ensure your camera is properly zoomed</div>
+                        <div class="s3-item">We'll tell you if we can't hear you, avoid asking if we can hear you</div>
+                        <div class="s3-item">Unmute yourself at your turn, which will be evident on screen</div>
+                    </div>
+                </div>
+                <div class="s1-bottom-logo bni bni-logo-main">BNI</div>
+            </div>
+
+            <!-- Slide 4: Recording -->
+            <div class="slide" data-id="slide4">
+                <div class="red-header">
+                    <div class="bni bni-logo-main">BNI</div>
+                    <h2 contenteditable="false" data-key="s4_header">Legal Notice</h2>
+                </div>
+                <div class="s4-disclaimer">
+                    <h1 style="font-size: 3.5vw; margin-bottom: 10px;" contenteditable="false" data-key="s4_title">Recording</h1>
+                    <h3 contenteditable="false" data-key="s4_subtitle">DISCLAIMER</h3>
+                    <div class="s4-text" contenteditable="false" data-key="s4_text">
+                        We (BNI Global, LLC and its Franchisees) will be taking audio and/or video recordings<br>
+                        and/or screenshots of this Chapter Meeting to post on our website, social media platforms and/or to use in our<br>
+                        worldwide trainings or marketing communications/materials,<br>
+                        with some details about you and/or your business, in our legitimate interests and those<br>
+                        of the Chapter Members, and/or to help promote the Chapter's activities.<br>
+                        If you would prefer that your details not be shared, please let the Chapter President know.
+                    </div>
+                    <div class="s4-link" contenteditable="false" data-key="s4_link">www.bni.com/privacy-policy</div>
+                </div>
+                <div class="s1-bottom-logo bni bni-logo-main">BNI</div>
+            </div>
+
+            <!-- Slide 5: Global Stats -->
+            <div class="slide" data-id="slide5">
+                <div class="s5-top">
+                    <div class="s5-logo bni bni-logo-main">BNI</div>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg" class="s5-map">
+                </div>
+                <div class="s5-bottom">
+                    <div class="stat-box">
+                        <h3 contenteditable="false" data-key="s5_stat1_val">340,000+</h3>
+                        <p contenteditable="false" data-key="s5_stat1_label">Global Members</p>
+                    </div>
+                    <div class="stat-box">
+                        <h3 contenteditable="false" data-key="s5_stat2_val">11,300+</h3>
+                        <p contenteditable="false" data-key="s5_stat2_label">Global Chapters</p>
+                    </div>
+                    <div class="stat-box">
+                        <h3 contenteditable="false" data-key="s5_stat3_val">76</h3>
+                        <p contenteditable="false" data-key="s5_stat3_label">Countries</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Admin Sidebar -->
+    <div class="admin-sidebar">
+        <h2>⚙️ Slide Settings</h2>
+
+        <div class="admin-section">
+            <h3>Manage Slides</h3>
+            <div id="admin-slide-list">
+                <!-- Rendered by JS -->
+            </div>
+        </div>
+
+        <div class="admin-section">
+            <h3>Media & Styles</h3>
+            <div class="admin-input-group">
+                <label>YouTube Video ID</label>
+                <input type="text" id="admin-video-id" placeholder="e.g. dQw4w9WgXcQ">
+            </div>
+            <div class="admin-input-group">
+                <label>Background Image URL</label>
+                <input type="text" id="admin-bg-url" placeholder="https://...">
+            </div>
+        </div>
+
+        <div class="admin-footer">
+            <button class="save-btn" id="save-btn" onclick="saveConfig()">💾 Save Changes</button>
+            <p style="font-size: 0.7rem; color: #666; text-align: center;">Click on slide text to edit directly.</p>
+        </div>
+    </div>
+
+    <div class="edit-mode-indicator">✏️ Edit Mode Active - Click text to edit</div>
+    <button class="exit-fs" onclick="toggleFullscreen()">Exit Fullscreen (Esc)</button>
+
+    <script>
+        // Dummy data - mimicking what would come from backend
+        const dummyChapter = {
+            name: "Mahardika",
+            city: "Jakarta Selatan"
+        };
+
+        const dummyVideoId = "dQw4w9WgXcQ"; // Placeholder YouTube video
+
+        let config = {
+            video_id: dummyVideoId,
+            bg_url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070',
+            slides: [
+                { id: 'slide1', label: '1. Open Networking', visible: true },
+                { id: 'slide2', label: '2. Weekly Meeting', visible: true },
+                { id: 'slide3', label: '3. Etiquettes', visible: true },
+                { id: 'slide4', label: '4. Recording', visible: true },
+                { id: 'slide5', label: '5. Global Stats', visible: true }
+            ],
+            content: {}
+        };
+
+        let currentSlideIndex = 0;
+        let isAdminOpen = false;
+
+        function init() {
+            // Apply media
+            document.getElementById('admin-video-id').value = config.video_id;
+            document.getElementById('admin-bg-url').value = config.bg_url;
+            document.getElementById('s2-bg').style.backgroundImage = `url('${config.bg_url}')`;
+
+            renderNav();
+            renderAdminList();
+            showSlide(0);
+        }
+
+        function renderNav() {
+            const nav = document.getElementById('tabs-nav');
+            nav.innerHTML = '';
+            config.slides.forEach((s, index) => {
+                const tab = document.createElement('div');
+                tab.className = `tab ${s.visible ? '' : 'hidden-slide'}`;
+                if (index === currentSlideIndex) tab.classList.add('active');
+                tab.innerText = s.label;
+                tab.onclick = () => goToSlide(index);
+                nav.appendChild(tab);
+            });
+        }
+
+        function renderAdminList() {
+            const list = document.getElementById('admin-slide-list');
+            list.innerHTML = '';
+            config.slides.forEach((s, index) => {
+                const item = document.createElement('div');
+                item.className = 'slide-item';
+                item.innerHTML = `
+                    <span>${s.label}</span>
+                    <button class="slide-control-btn ${s.visible ? 'active' : ''}" onclick="toggleSlideVisibility(${index})">
+                        ${s.visible ? '👁️' : '🚫'}
+                    </button>
+                    <button class="slide-control-btn" onclick="moveSlide(${index}, -1)">▲</button>
+                    <button class="slide-control-btn" onclick="moveSlide(${index}, 1)">▼</button>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function goToSlide(index) {
+            currentSlideIndex = index;
+            showSlide(index);
+            renderNav();
+        }
+
+        function showSlide(index) {
+            const slideData = config.slides[index];
+            document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+
+            const slideEl = document.querySelector(`.slide[data-id="${slideData.id}"]`);
+            if (slideEl) slideEl.classList.add('active');
+
+            // Video handling
+            const videoFrame = document.getElementById('video-frame');
+            if (slideData.id === 'slide2') {
+                if (!videoFrame.src.includes(config.video_id)) {
+                    videoFrame.src = `https://www.youtube.com/embed/${config.video_id}?autoplay=1&mute=1`;
+                }
+            } else {
+                videoFrame.src = "";
+            }
+        }
+
+        function toggleAdminPanel() {
+            isAdminOpen = !isAdminOpen;
+            document.body.classList.toggle('admin-open');
+            document.body.classList.toggle('admin-mode');
+
+            // Toggle contenteditable
+            document.querySelectorAll('[data-key]').forEach(el => {
+                el.contentEditable = isAdminOpen;
+            });
+        }
+
+        function toggleSlideVisibility(index) {
+            config.slides[index].visible = !config.slides[index].visible;
+            renderNav();
+            renderAdminList();
+        }
+
+        function moveSlide(index, direction) {
+            const newIndex = index + direction;
+            if (newIndex >= 0 && newIndex < config.slides.length) {
+                const temp = config.slides[index];
+                config.slides[index] = config.slides[newIndex];
+                config.slides[newIndex] = temp;
+                renderNav();
+                renderAdminList();
+            }
+        }
+
+        function saveConfig() {
+            const saveBtn = document.getElementById('save-btn');
+            saveBtn.innerText = '⌛ Saving...';
+            saveBtn.disabled = true;
+
+            // Collect content
+            document.querySelectorAll('[data-key]').forEach(el => {
+                config.content[el.getAttribute('data-key')] = el.innerHTML;
+            });
+
+            // Collect media
+            config.video_id = document.getElementById('admin-video-id').value;
+            config.bg_url = document.getElementById('admin-bg-url').value;
+
+            // Simulate save (would normally POST to backend)
+            setTimeout(() => {
+                alert('✅ Configuration saved successfully!\n\n(Demo mode - no backend connected)');
+                saveBtn.innerText = '💾 Save Changes';
+                saveBtn.disabled = false;
+            }, 500);
+        }
+
+        function toggleFullscreen() {
+            document.getElementById('body').classList.toggle('fullscreen');
+        }
+
+        // Navigation keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                let next = currentSlideIndex + 1;
+                while (next < config.slides.length && !config.slides[next].visible) next++;
+                if (next < config.slides.length) goToSlide(next);
+            }
+            if (e.key === 'ArrowLeft') {
+                let prev = currentSlideIndex - 1;
+                while (prev >= 0 && !config.slides[prev].visible) prev--;
+                if (prev >= 0) goToSlide(prev);
+            }
+            if (e.key === 'Escape') {
+                document.getElementById('body').classList.remove('fullscreen');
+                if (isAdminOpen) toggleAdminPanel();
+            }
+        });
+
+        window.onload = init;
+    </script>
+</body>
+</html>
