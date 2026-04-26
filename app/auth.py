@@ -73,10 +73,41 @@ async def require_auth(user: Optional[Member] = Depends(get_current_user)):
         )
     return user
 
-def is_admin(member: Member, db: Session) -> bool:
+def get_member_role_set(member: Member, db: Session) -> set:
     from .models import MemberRole
-    return db.query(MemberRole).filter(
+    rows = db.query(MemberRole.role).filter(
         MemberRole.member_id == member.id,
-        MemberRole.role == "admin",
         MemberRole.is_active == True,
-    ).first() is not None
+    ).all()
+    return {r[0] for r in rows}
+
+
+def has_any_role(member: Member, db: Session, *roles: str) -> bool:
+    if not roles:
+        return False
+    return bool(get_member_role_set(member, db) & set(roles))
+
+
+def is_admin(member: Member, db: Session) -> bool:
+    return has_any_role(member, db, "admin")
+
+
+# Role groups used by the meeting editor field gating.
+ROLE_TOP3 = ("president", "vp", "secretary", "st")
+ROLE_ST = ("secretary", "st")
+ROLE_EDU = ("education", "education_coordinator", "ec")
+
+
+def can_edit_meeting_field(member: Member, db: Session, field: str) -> bool:
+    if not member:
+        return False
+    roles = get_member_role_set(member, db)
+    if "admin" in roles or "super_admin" in roles:
+        return True
+    if field in ("feature_presenter_id", "feature_presenter_2_id", "feature_title", "feature_description", "core_values_host_id"):
+        return bool(roles & set(ROLE_ST))
+    if field == "education_host_id":
+        return bool(roles & set(ROLE_EDU))
+    if field in ("theme", "weekly_notes"):
+        return bool(roles & set(ROLE_TOP3))
+    return False

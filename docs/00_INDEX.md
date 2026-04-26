@@ -33,6 +33,8 @@ others when needed. If you are an AI assistant working on this project, read
 | File | Topic |
 |------|-------|
 | `learnings/2026-04-22_member_lifecycle.md` | Member exit/join not handled — gap analysis + fix pattern |
+| `learnings/2026-04-22_bni_no_parallel_data.md` | BNI rule: no member-direct entry of PALMS metrics |
+| `learnings/2026-04-22_starlette_template_response_signature.md` | Starlette 1.0 TemplateResponse signature trap (deprecated form caused 500s) |
 
 ## Context Files
 

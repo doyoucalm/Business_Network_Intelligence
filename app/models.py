@@ -112,15 +112,35 @@ class Meeting(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=gen_uuid)
     chapter_id = Column(UUID(as_uuid=True), ForeignKey("chapters.id"), nullable=False)
     meeting_date = Column(Date, nullable=False)
-    meeting_type = Column(String(20), default="weekly")
+    meeting_type = Column(String(20), default="regular")
     current_slide_index = Column(Integer, default=0)
     status = Column(String(20), default="scheduled")
     is_locked = Column(Boolean, default=False)
+    weekly_notes = Column(Text, nullable=True)
     meta = Column(JSONB, default={})
     created_at = Column(DateTime, default=datetime.utcnow)
-    
+
+    __table_args__ = (
+        CheckConstraint(
+            "meeting_type IN ('regular','closed','launchpad')",
+            name="ck_meetings_meeting_type",
+        ),
+    )
+
     chapter = relationship("Chapter")
     attendance = relationship("Attendance", back_populates="meeting")
+
+
+class HostRotationState(Base):
+    __tablename__ = "host_rotation_state"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=gen_uuid)
+    chapter_id = Column(UUID(as_uuid=True), ForeignKey("chapters.id"), nullable=False)
+    rotation_type = Column(String(30), nullable=False)  # 'core_value' | 'education'
+    last_member_id = Column(UUID(as_uuid=True), ForeignKey("members.id"), nullable=True)
+    last_index = Column(Integer, default=0)
+    last_assigned_date = Column(Date, nullable=True)
+    history = Column(JSONB, default=list)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 class Attendance(Base):
     __tablename__ = "attendance"

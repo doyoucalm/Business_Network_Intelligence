@@ -9,7 +9,10 @@ from .ai import chat_with_ai
 from .auth import verify_password, create_access_token, get_current_user, require_auth, ACCESS_TOKEN_EXPIRE_MINUTES, is_admin
 from .data_engine import process_roster_excel, process_palms_excel, process_visitor_excel, get_sop_status
 from .traffic_light import calculate_all_traffic_lights
-from .routes_meeting import meetings_page, create_meeting_api, attendance_page, save_attendance_api
+from .routes_meeting import (
+    meetings_page, create_meeting_api, attendance_page, save_attendance_api,
+    meeting_edit_page, update_meeting_api, host_suggest_api,
+)
 from .routes_roles import roles_page, assign_roles_api
 from .routes_cards import cards_list_page, card_editor_page, save_card_api, upload_image_api
 from .routes_presenter import presenter_view
@@ -26,6 +29,9 @@ app.get("/admin/meetings")(meetings_page)
 app.post("/api/admin/meetings")(create_meeting_api)
 app.get("/admin/meetings/{meeting_id}/attendance")(attendance_page)
 app.post("/api/admin/attendance")(save_attendance_api)
+app.get("/admin/meetings/{meeting_id}/edit")(meeting_edit_page)
+app.patch("/api/admin/meetings/{meeting_id}")(update_meeting_api)
+app.get("/api/admin/host-suggest/{rotation_type}")(host_suggest_api)
 app.get("/admin/roles")(roles_page)
 app.post("/api/admin/roles")(assign_roles_api)
 app.get("/admin/cards")(cards_list_page)
@@ -72,26 +78,7 @@ async def members_directory(request: Request, db: Session = Depends(get_db), use
         request=request, name="members.html", context={"chapter": chapter, "members": members, "user": user}
     )
 
-@app.get("/presenter/{meeting_id}")
-async def presenter_view_page(meeting_id: str, request: Request, db: Session = Depends(get_db), user: Member = Depends(require_auth)):
-    meeting = db.query(Meeting).filter_by(id=meeting_id).first()
-    if not meeting:
-        raise HTTPException(status_code=404, detail="Meeting tidak ditemukan")
-
-    chapter = db.query(Chapter).first()
-    chapter_settings = chapter.settings or {}
-    slides_config = chapter_settings.get("wm_slides_config", {})
-
-    context = {
-        "chapter": chapter,
-        "meeting": meeting,
-        "user": user,
-        "slides_config": slides_config,
-        "is_admin": is_admin(user, db)
-    }
-    return templates.TemplateResponse(
-        request=request, name="presenter.html", context=context
-    )
+app.get("/presenter/{meeting_id}")(presenter_view)
 
 @app.get("/api/presenter/{meeting_id}/state")
 async def get_presenter_state(meeting_id: str, db: Session = Depends(get_db)):

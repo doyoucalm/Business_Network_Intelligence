@@ -51,6 +51,7 @@ async def presenter_view(meeting_id: str, request: Request, db: Session = Depend
     core_values_host = db.query(Member).filter_by(id=meeting.meta.get("core_values_host_id")).first()
     edu_host = db.query(Member).filter_by(id=meeting.meta.get("education_host_id")).first()
     feature_presenter = db.query(Member).filter_by(id=meeting.meta.get("feature_presenter_id")).first()
+    feature_presenter_2 = db.query(Member).filter_by(id=meeting.meta.get("feature_presenter_2_id")).first() if meeting.meta.get("feature_presenter_2_id") else None
 
     # --- LT ROSTER: join MemberRole with Member ---
     lt_roles = db.query(MemberRole, Member).join(Member, MemberRole.member_id == Member.id).filter(
@@ -237,16 +238,24 @@ async def presenter_view(meeting_id: str, request: Request, db: Session = Depend
     } for v in visitors]
     slides.append({"type": "dynamic", "template": "visitor_intro", "data": {"visitors": visitors_data}})
 
-    # Feature Presentation
-    slides.append({"type": "dynamic", "template": "feature_presentation", "data": {
-        "member": {
-            "full_name": feature_presenter.full_name if feature_presenter else "",
-            "photo_url": feature_presenter.photo_url if feature_presenter else "",
-            "classification": feature_presenter.classification if feature_presenter else ""
-        },
-        "title": meeting.meta.get("feature_title", "Feature Presentation"),
-        "description": meeting.meta.get("feature_description", "")
-    }})
+    # Feature Presentation — skipped for closed meetings; supports 0/1/2 speakers.
+    if meeting.meeting_type != "closed":
+        speakers = []
+        for fp in (feature_presenter, feature_presenter_2):
+            if fp:
+                speakers.append({
+                    "full_name": fp.full_name,
+                    "photo_url": fp.photo_url,
+                    "classification": fp.classification,
+                })
+        slides.append({"type": "dynamic", "template": "feature_presentation", "data": {
+            "speakers": speakers,
+            # Back-compat for templates that still read .member:
+            "member": speakers[0] if speakers else {"full_name": "", "photo_url": "", "classification": ""},
+            "title": meeting.meta.get("feature_title", "Feature Presentation"),
+            "description": meeting.meta.get("feature_description", ""),
+            "meeting_type": meeting.meeting_type,
+        }})
 
     slides.append({"type": "static", "template": "photo_session", "data": {}})
 

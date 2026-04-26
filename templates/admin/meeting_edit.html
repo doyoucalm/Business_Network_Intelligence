@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Meeting {{ meeting.meeting_date }} — {{ chapter.name }}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body { padding: 2rem; max-width: 900px; margin: 0 auto; font-family: sans-serif; }
+        h1 { color: var(--bni-red); }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: bold; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; font-family: inherit;
+        }
+        .form-group input:disabled, .form-group select:disabled, .form-group textarea:disabled {
+            background: #f0f0f0; color: #666; cursor: not-allowed;
+        }
+        .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .btn { padding: 0.7rem 1.5rem; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-primary { background: var(--bni-red); color: white; }
+        .lock-note { font-size: 0.8rem; color: #999; }
+        .role-pill { display:inline-block; background:#eef; color:#225; padding:0.15rem 0.5rem; border-radius:10px; font-size:0.75rem; margin-right:0.25rem; }
+    </style>
+</head>
+<body>
+    <div style="margin-bottom: 1rem;">
+        <a href="/admin/meetings" style="text-decoration: none; color: #666;">&larr; Daftar Meeting</a>
+    </div>
+    <h1>Edit Meeting — {{ meeting.meeting_date }}</h1>
+    <div style="margin-bottom:1rem;">
+        Role kamu:
+        {% for r in user_roles %}<span class="role-pill">{{ r }}</span>{% endfor %}
+        {% if not user_roles %}<span class="lock-note">(tidak ada role)</span>{% endif %}
+    </div>
+    <p class="lock-note">Field yang abu-abu: tidak bisa kamu ubah berdasarkan role. Hubungi admin untuk perubahan tersebut.</p>
+
+    <form id="editForm">
+        <div class="row2">
+            <div class="form-group">
+                <label>Tanggal</label>
+                <input type="date" value="{{ meeting.meeting_date }}" disabled>
+                <div class="lock-note">Tanggal tidak bisa diubah setelah dibuat.</div>
+            </div>
+            <div class="form-group">
+                <label>Tipe Meeting</label>
+                <select id="meeting_type" {% if not editable.meeting_type %}disabled{% endif %}>
+                    {% for t in meeting_types %}
+                    <option value="{{ t }}" {% if t == meeting.meeting_type %}selected{% endif %}>{{ t }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Tema</label>
+            <input type="text" id="theme" value="{{ meeting.meta.get('theme','') }}" {% if not editable.theme %}disabled{% endif %}>
+        </div>
+
+        <div class="row2" id="fpRow">
+            <div class="form-group">
+                <label>Feature Presenter #1</label>
+                <select id="feature_presenter_id" {% if not editable.feature_presenter_id %}disabled{% endif %}>
+                    <option value="">-- (kosong) --</option>
+                    {% for m in members %}
+                    <option value="{{ m.id }}" {% if meeting.meta.get('feature_presenter_id') == (m.id|string) %}selected{% endif %}>{{ m.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Feature Presenter #2</label>
+                <select id="feature_presenter_2_id" {% if not editable.feature_presenter_2_id %}disabled{% endif %}>
+                    <option value="">-- (kosong) --</option>
+                    {% for m in members %}
+                    <option value="{{ m.id }}" {% if meeting.meta.get('feature_presenter_2_id') == (m.id|string) %}selected{% endif %}>{{ m.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Feature Title</label>
+            <input type="text" id="feature_title" value="{{ meeting.meta.get('feature_title','') }}" {% if not editable.feature_title %}disabled{% endif %}>
+        </div>
+
+        <div class="form-group">
+            <label>Feature Description</label>
+            <textarea id="feature_description" rows="2" {% if not editable.feature_description %}disabled{% endif %}>{{ meeting.meta.get('feature_description','') }}</textarea>
+        </div>
+
+        <div class="row2">
+            <div class="form-group">
+                <label>Core Values Host (ST)</label>
+                <select id="core_values_host_id" {% if not editable.core_values_host_id %}disabled{% endif %}>
+                    <option value="">-- (kosong) --</option>
+                    {% for m in members %}
+                    <option value="{{ m.id }}" {% if meeting.meta.get('core_values_host_id') == (m.id|string) %}selected{% endif %}>{{ m.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Education Host (Education Coordinator)</label>
+                <select id="education_host_id" {% if not editable.education_host_id %}disabled{% endif %}>
+                    <option value="">-- (kosong) --</option>
+                    {% for m in members %}
+                    <option value="{{ m.id }}" {% if meeting.meta.get('education_host_id') == (m.id|string) %}selected{% endif %}>{{ m.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Weekly Notes / Dokumentasi (Top 3)</label>
+            <textarea id="weekly_notes" rows="4" {% if not editable.weekly_notes %}disabled{% endif %}>{{ meeting.weekly_notes or '' }}</textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+        <a href="/admin/meetings/{{ meeting.id }}/attendance" class="btn" style="background:#28a745;color:white;text-decoration:none;">Presensi</a>
+        <a href="/presenter/{{ meeting.id }}" class="btn" style="background:#007bff;color:white;text-decoration:none;">Buka Slides</a>
+    </form>
+
+    <script>
+        const editable = {{ editable|tojson }};
+        const meetingId = "{{ meeting.id }}";
+        const typeSel = document.getElementById('meeting_type');
+        const fpRow = document.getElementById('fpRow');
+        function applyType() {
+            const t = typeSel.value;
+            fpRow.style.display = (t === 'closed') ? 'none' : '';
+        }
+        typeSel.addEventListener('change', applyType);
+        applyType();
+
+        document.getElementById('editForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fields = ['theme','feature_presenter_id','feature_presenter_2_id','feature_title','feature_description','core_values_host_id','education_host_id','weekly_notes','meeting_type'];
+            const payload = {};
+            for (const f of fields) {
+                if (!editable[f]) continue;  // skip fields the user can't edit
+                const el = document.getElementById(f);
+                if (!el) continue;
+                payload[f] = el.value || null;
+            }
+            const res = await fetch(`/api/admin/meetings/${meetingId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                alert('Tersimpan.');
+                location.reload();
+            } else {
+                const err = await res.json().catch(() => ({}));
+                alert('Gagal: ' + (err.detail || 'Unknown error'));
+            }
+        });
+    </script>
+</body>
+</html>

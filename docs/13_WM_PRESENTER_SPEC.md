@@ -66,8 +66,64 @@ ALTER TABLE meetings
   ADD COLUMN template_id UUID FK,
   ADD COLUMN slide_overrides JSONB DEFAULT '{}',
   ADD COLUMN started_at TIMESTAMPTZ,
-  ADD COLUMN ended_at TIMESTAMPTZ;
+  ADD COLUMN ended_at TIMESTAMPTZ,
+  ADD COLUMN meeting_type VARCHAR DEFAULT 'regular',  -- regular | closed | launchpad
+  ADD COLUMN theme TEXT,
+  ADD COLUMN feature_presenter_id UUID FK members(id),
+  ADD COLUMN feature_presenter_2_id UUID FK members(id),  -- optional second speaker
+  ADD COLUMN feature_title TEXT,
+  ADD COLUMN core_values_host_id UUID FK members(id),
+  ADD COLUMN education_host_id UUID FK members(id),
+  ADD COLUMN weekly_notes TEXT;  -- per-week documentation
 ```
+
+## Meeting types
+
+| `meeting_type` | Feature presenter slots | Use case |
+|---|---|---|
+| `regular` | 2 | Standard weekly meeting — both FP slots normally filled |
+| `closed` | 0 | Members-only meeting, no FP |
+| `launchpad` | varies | New-member introduction(s) instead of full FP |
+
+Both `feature_presenter_id` and `feature_presenter_2_id` are filled on regular meetings. If only one speaker is available that week, leave slot 2 NULL (presenter renders the available slot only).
+
+## Meeting scheduling
+
+Admin can create meetings up to **2 months ahead**. UI shows a date picker, not just "next Wednesday." Empty fields are OK at creation time — they get filled in by the role-based editors closer to the date.
+
+## Role-based meeting editors
+
+Single dashboard at `/admin/meetings/{id}`, fields gated by role:
+
+| Role | Editable fields |
+|---|---|
+| **ST (Secretary/Treasurer)** | feature_presenter_id, feature_presenter_2_id, feature_title, core_values_host_id |
+| **Education Coordinator** | education_host_id |
+| **Top 3 (President / VP / ST)** | All of the above + theme, weekly_notes |
+| **Super Admin** | All fields including meeting_type, meeting_date, attendance |
+
+Implementation: `require_role(["st", "ec", "president", "vp", "admin"])` decorator per field-PATCH endpoint, OR single PATCH with server-side per-field allowlist by role.
+
+## Weekly documentation
+
+`meetings.weekly_notes` is free-form text saved per meeting. Surfaced on `/admin/meetings/{id}` for top-3 + super admin to edit. Displayed in chapter archive at `/admin/meetings` list view (collapsed, expandable).
+
+## Rotation — Education Moment + Core Values
+
+Both rotate weekly. State stored separately from member-card rotation:
+
+```sql
+CREATE TABLE host_rotation_state (
+  id UUID PK, chapter_id UUID FK,
+  rotation_type VARCHAR,        -- 'education' | 'core_value'
+  current_index INT,            -- which item in the cycle
+  last_assigned_member_id UUID FK members(id),
+  last_assigned_at TIMESTAMPTZ
+);
+```
+
+- **Core Values:** cycle of 7 (see `docs/context/BNI_CORE_VALUES.md`). Auto-suggest host per week from active members in round-robin order. Editable by ST.
+- **Education Moment:** cycle of education topics (library to be built; for now free-form). Auto-suggest host. Editable by Education Coordinator.
 
 ## Visibility rules
 

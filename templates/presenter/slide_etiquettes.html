@@ -1,33 +1,25 @@
-<div style="width: 80%; max-width: 1000px;">
-    <h1 style="color: var(--bni-red); border-bottom: 4px solid var(--bni-red); display: inline-block; padding-bottom: 0.5rem; margin-bottom: 3rem;">Meeting Etiquettes</h1>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4rem;">
-        <div class="etiquette-item" style="display: flex; gap: 1.5rem; align-items: flex-start; margin-bottom: 2rem;">
-            <div style="background: var(--bni-red); color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">1</div>
-            <div>
-                <h3 style="margin-top: 0; font-size: 1.8rem;">Be on Time</h3>
-                <p style="opacity: 0.7; font-size: 1.2rem;">Hargai waktu rekan-rekan Anda dengan hadir sebelum meeting dimulai.</p>
-            </div>
-        </div>
-        <div class="etiquette-item" style="display: flex; gap: 1.5rem; align-items: flex-start; margin-bottom: 2rem;">
-            <div style="background: var(--bni-red); color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">2</div>
-            <div>
-                <h3 style="margin-top: 0; font-size: 1.8rem;">Camera On</h3>
-                <p style="opacity: 0.7; font-size: 1.2rem;">Tunjukkan kehadiran Anda dengan menyalakan kamera selama meeting berlangsung.</p>
-            </div>
-        </div>
-        <div class="etiquette-item" style="display: flex; gap: 1.5rem; align-items: flex-start; margin-bottom: 2rem;">
-            <div style="background: var(--bni-red); color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">3</div>
-            <div>
-                <h3 style="margin-top: 0; font-size: 1.8rem;">Professional Attire</h3>
-                <p style="opacity: 0.7; font-size: 1.2rem;">Berpakaianlah layaknya Anda bertemu klien secara tatap muka.</p>
-            </div>
-        </div>
-        <div class="etiquette-item" style="display: flex; gap: 1.5rem; align-items: flex-start; margin-bottom: 2rem;">
-            <div style="background: var(--bni-red); color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">4</div>
-            <div>
-                <h3 style="margin-top: 0; font-size: 1.8rem;">Stay Engaged</h3>
-                <p style="opacity: 0.7; font-size: 1.2rem;">Hindari multitasking. Fokus pada presentasi rekan Anda.</p>
-            </div>
-        </div>
+<div style="width:100%; height:100%; position:relative; background:white; color:var(--text-dark);">
+    <div class="red-header">
+        <div class="bni bni-logo-main">BNI</div>
+        <h2>Online Meeting</h2>
     </div>
+    <div style="padding:3% 14% 3% 8%;">
+        <h1 style="font-size:3.2vw; text-align:center; margin-bottom:2%; font-weight:800;">Etiquettes</h1>
+        <ul style="list-style:none;">
+            {% set items = [
+                'Please mute your line, but keep your video on',
+                'Be sure you are using quality internet, headset and webcam',
+                'Be sure you are in front of a professional background',
+                'Ensure your camera is properly zoomed',
+                'We will tell you if we cannot hear you, avoid asking if we can hear you',
+                'Unmute yourself at your turn, which will be evident on screen',
+            ] %}
+            {% for it in items %}
+            <li style="font-size:1.5vw; padding:0.9vw 0; border-bottom:1px solid #ddd; display:flex; align-items:center;">
+                <span style="color:var(--primary); font-weight:bold; margin-right:14px;">✓</span>{{ it }}
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="bni-logo-main corner-bni">BNI</div>
 </div>

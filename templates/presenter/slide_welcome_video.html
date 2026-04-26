@@ -1,13 +1,18 @@
-<div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-    <h2 style="color: var(--bni-red); margin-bottom: 2rem;">{{ slide.data.video_title or 'Welcome to BNI' }}</h2>
-    <div style="width: 80%; aspect-ratio: 16/9; background: #000; border: 2px solid #333; display: flex; align-items: center; justify-content: center; border-radius: 20px; overflow: hidden;">
-        {% if slide.data.video_id %}
-            <iframe width="100%" height="100%" src="https://www.youtube.com/embed/{{ slide.data.video_id }}?autoplay=0" frameborder="0" allowfullscreen></iframe>
-        {% else %}
-            <div style="text-align: center; opacity: 0.5;">
-                <svg width="100" height="100" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                <p>Video Placeholder</p>
-            </div>
-        {% endif %}
+{% set bg = (chapter.settings.get('meeting_video', {}).get('bg_url') if chapter.settings else '') or 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070' %}
+{% set vid = (chapter.settings.get('meeting_video', {}).get('video_id') if chapter.settings else '') or slide.data.video_id %}
+<div style="width:100%; height:100%; position:relative; background:white;">
+    <div style="position:absolute; inset:0; background-image:url('{{ bg }}'); background-position:center; background-size:cover;"></div>
+    <div style="position:absolute; inset:0; background:linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.8) 40%, rgba(255,255,255,0.2) 100%); z-index:1;"></div>
+    <div style="position:relative; z-index:10; padding:5% 6%; height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+        <div style="width:70%; aspect-ratio:16/9; background:#000; border-radius:12px; overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,0.4); border:4px solid white;">
+            {% if vid %}
+            <iframe src="https://www.youtube.com/embed/{{ vid }}?rel=0" allow="autoplay; encrypted-media" allowfullscreen style="width:100%; height:100%; border:none;"></iframe>
+            {% else %}
+            <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#888; font-size:1.4vw;">No video configured</div>
+            {% endif %}
+        </div>
+        <div style="margin-top:20px; font-size:1.4vw; font-weight:700; color:var(--text-dark); background:rgba(255,255,255,0.85); padding:6px 22px; border-radius:20px;">
+            {{ slide.data.video_title or 'Weekly Meeting — Welcome Video' }}
+        </div>
     </div>
 </div>

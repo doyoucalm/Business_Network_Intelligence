@@ -3,138 +3,203 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Presenter - {{ meeting.meeting_date }}</title>
+    <title>Weekly Meeting — {{ chapter.name }} | {{ meeting.meeting_date }}</title>
     <style>
-        :root { --bni-red: #cf202e; }
-        body { margin: 0; background: #1A1A1A; color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; height: 100vh; }
-        
-        .slides-container { position: relative; width: 100vw; height: 100vh; }
-        .slide { 
-            position: absolute; inset: 0; display: none; 
-            flex-direction: column; align-items: center; justify-content: center;
-            padding: 4rem; box-sizing: border-box;
-            background: radial-gradient(circle at center, #2c2c2c 0%, #1a1a1a 100%);
+        :root {
+            --primary: #CC2229;
+            --bni-red: #CC2229;
+            --text-dark: #222222;
+            --divider-green: #006633;
+            --bg-white: #FFFFFF;
+            --bg-dark: #1a1a1a;
         }
-        .slide.active { display: flex; }
-        
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
+        body { background: var(--bg-dark); min-height: 100vh; color: white; overflow-x: hidden; }
+
+        /* Top Navigation */
+        .top-nav {
+            background: #2c2c2c; padding: 12px 24px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid #444; position: sticky; top: 0; z-index: 100;
+        }
+        .chapter-info h1 { font-size: 1.1rem; color: #fff; font-weight: 600; }
+        .chapter-info p { font-size: 0.8rem; color: #aaa; }
+        .nav-controls { display: flex; gap: 8px; }
+        .btn {
+            padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;
+            font-weight: 600; font-size: 0.9rem; transition: 0.2s;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-secondary { background: #444; color: white; }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        /* Tabs */
+        .slide-tabs {
+            display: flex; padding: 12px 16px; gap: 8px; flex-wrap: wrap;
+            justify-content: center; max-height: 120px; overflow-y: auto;
+        }
+        .tab {
+            padding: 6px 14px; background: #333; color: #ccc;
+            border-radius: 16px; cursor: pointer; font-size: 0.78rem;
+            border: 1px solid #444; transition: 0.2s; white-space: nowrap;
+        }
+        .tab:hover { background: #3d3d3d; }
+        .tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* Viewport + slide-frame */
+        .viewport {
+            width: 100%; display: flex; justify-content: center;
+            padding: 0 20px 60px;
+        }
+        .slide-frame {
+            width: 100%; max-width: 1280px; aspect-ratio: 16 / 9;
+            background: white; border-radius: 8px; overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6); position: relative;
+        }
+        .slide {
+            position: absolute; inset: 0; display: none; color: var(--text-dark); overflow: hidden;
+        }
+        .slide.active { display: block; opacity: 1; animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+
+        /* Common BNI brand bits */
+        .bni-logo-main { color: var(--primary); font-weight: 900; position: relative; }
+        .bni-logo-main::after { content: '®'; font-size: 0.4em; position: absolute; top: 0.1em; right: -0.5em; }
+        .swoosh-container { position: absolute; bottom: 0; right: 0; width: 50%; height: 40%; overflow: hidden; pointer-events: none; }
+        .swoosh-light { position: absolute; bottom: -10%; right: -5%; width: 120%; height: 120%; background: #f5f5f5; border-top-left-radius: 100%; z-index: 1; }
+        .swoosh-dark { position: absolute; bottom: -15%; right: -10%; width: 100%; height: 100%; background: var(--primary); border-top-left-radius: 100%; z-index: 2; }
+        .red-header {
+            background: var(--primary); height: 14%; width: 95%; margin-top: 4%;
+            clip-path: polygon(0 0, 100% 0, 97% 100%, 0% 100%);
+            display: flex; align-items: center; padding: 0 5%; color: white;
+        }
+        .red-header .bni { font-size: 3vw; margin-right: 32px; }
+        .red-header h2 { font-size: 2.4vw; font-weight: 600; }
+        .corner-bni { position: absolute; bottom: 4%; left: 4%; font-size: 3vw; z-index: 5; }
+
+        /* Generic dark-card fallback (used by slide templates that haven't been redesigned yet) */
+        .legacy-dark {
+            position: absolute; inset: 0;
+            background: radial-gradient(circle at center, #2c2c2c 0%, #1a1a1a 100%);
+            color: white; display: flex; align-items: center; justify-content: center;
+            padding: 4rem; text-align: center;
+        }
+
+        /* Footer + counter */
         #footer {
-            position: fixed; bottom: 0; left: 0; right: 0; height: 60px;
-            background: rgba(0,0,0,0.8); display: flex; align-items: center; 
-            padding: 0 2rem; justify-content: space-between; font-size: 0.9rem;
+            position: fixed; bottom: 0; left: 0; right: 0; height: 44px;
+            background: rgba(0,0,0,0.85); display: flex; align-items: center;
+            padding: 0 1.5rem; justify-content: space-between; font-size: 0.85rem;
             border-top: 1px solid #333; z-index: 1000;
         }
-        
-        #timer-bar {
-            position: fixed; bottom: 60px; left: 0; height: 4px;
-            background: var(--bni-red); width: 0%; transition: width 0.1s linear; z-index: 1001;
+        #footer .meeting-type-badge {
+            display: inline-block; padding: 2px 8px; margin-left: 0.5rem;
+            border-radius: 4px; font-size: 0.7rem; background: var(--primary); color: white;
         }
-        
-        .slide-counter { opacity: 0.6; }
-        
-        /* SLIDE CONTENT STYLES */
-        .title-slide h1 { font-size: 5rem; color: var(--bni-red); margin: 0; }
-        .title-slide h2 { font-size: 2rem; margin-top: 1rem; opacity: 0.8; }
-        
-        .member-card-layout { 
-            display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 3rem; 
-            width: 100%; max-width: 1400px; height: 80%;
+        .slide-counter { opacity: 0.7; }
+
+        /* Fullscreen */
+        body.fullscreen .top-nav, body.fullscreen .slide-tabs, body.fullscreen #footer { display: none !important; }
+        body.fullscreen .viewport { padding: 0; }
+        body.fullscreen .slide-frame { max-width: 100vw; height: 100vh; border-radius: 0; aspect-ratio: auto; box-shadow: none; }
+        .exit-fs {
+            position: fixed; bottom: 16px; right: 16px; z-index: 1000;
+            padding: 8px 14px; background: rgba(0,0,0,0.6); color: white;
+            border: 1px solid white; border-radius: 5px; cursor: pointer;
+            display: none; font-size: 0.8rem;
         }
-        .card-col { display: flex; flex-direction: column; }
-        .m-photo { width: 100%; aspect-ratio: 1; border-radius: 20px; object-fit: cover; border: 5px solid #333; }
-        .m-name { font-size: 2.5rem; font-weight: bold; margin-top: 1.5rem; }
-        .m-class { font-size: 1.2rem; color: var(--bni-red); font-weight: bold; }
-        
-        .list-box { background: rgba(255,255,255,0.05); padding: 2rem; border-radius: 20px; flex-grow: 1; }
-        .list-box h3 { margin-top: 0; color: var(--bni-red); border-bottom: 2px solid #444; padding-bottom: 0.5rem; }
-        .list-box ul { padding-left: 1.5rem; line-height: 1.6; font-size: 1.3rem; }
-        
-        .canvas-area { background: #000; border-radius: 20px; overflow: hidden; display: grid; grid-template-columns: 1fr 1fr; gap: 5px; height: 100%; }
-        .canvas-area img { width: 100%; height: 100%; object-fit: cover; }
-        
-        .next-presenter { 
-            position: absolute; top: 2rem; right: 2rem; 
-            background: rgba(0,0,0,0.5); padding: 0.8rem 1.5rem; border-radius: 10px;
-            border-left: 5px solid var(--bni-red); text-align: right;
-        }
-        .next-presenter .label { font-size: 0.8rem; opacity: 0.7; }
-        .next-presenter .name { font-weight: bold; font-size: 1.1rem; }
+        body.fullscreen .exit-fs { display: block; }
     </style>
 </head>
 <body>
-    <div class="slides-container" id="slidesContainer">
-        {% for slide in slides %}
-        <div class="slide {{ 'active' if loop.first else '' }}" id="slide-{{ loop.index0 }}">
-            {% include "presenter/slide_" + slide.template + ".html" %}
+    <div class="top-nav">
+        <div class="chapter-info">
+            <h1>BNI {{ chapter.name|upper }} CHAPTER</h1>
+            <p>Weekly Meeting Dashboard • {{ meeting.meeting_date }}</p>
+        </div>
+        <div class="nav-controls">
+            <button class="btn btn-secondary" onclick="prevSlide()">◀ Prev</button>
+            <button class="btn btn-secondary" onclick="nextSlide()">Next ▶</button>
+            <button class="btn btn-secondary" onclick="toggleFullscreen()">📺 Fullscreen</button>
+            {% if user and meeting %}
+            <a class="btn btn-primary" href="/admin/meetings/{{ meeting.id }}/edit">⚙️ Edit Meeting</a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% set redesigned = ['wm_title','open_networking','welcome_video','etiquettes','disclaimer','global_stats','member_card','feature_presentation','category_header','closing'] %}
+    {% set visible_slides = slides|selectattr('template','in',redesigned)|list %}
+
+    <div class="slide-tabs" id="tabs-nav">
+        {% for slide in visible_slides %}
+        <div class="tab {{ 'active' if loop.first else '' }}" data-idx="{{ loop.index0 }}" onclick="goToSlide({{ loop.index0 }})">
+            {{ loop.index }}. {{ slide.template.replace('_',' ').title() }}
         </div>
         {% endfor %}
     </div>
 
-    <div id="timer-bar"></div>
-    <div id="footer">
-        <div>BNI <strong>{{ chapter.name }}</strong> | {{ meeting.meeting_date }}</div>
-        <div class="slide-counter">Slide <span id="currentIdx">1</span> of {{ slides|length }}</div>
+    <div class="viewport">
+        <div class="slide-frame" id="slide-frame">
+            {% for slide in visible_slides %}
+            <div class="slide {{ 'active' if loop.first else '' }}"
+                 id="slide-{{ loop.index0 }}" data-template="{{ slide.template }}">
+                {% include "presenter/slide_" + slide.template + ".html" %}
+            </div>
+            {% endfor %}
+        </div>
     </div>
 
+    <div id="footer">
+        <div>
+            BNI <strong>{{ chapter.name }}</strong> · {{ meeting.meeting_date }}
+            <span class="meeting-type-badge">{{ meeting.meeting_type }}</span>
+        </div>
+        <div class="slide-counter">Slide <span id="currentIdx">1</span> of {{ visible_slides|length }}</div>
+    </div>
+
+    <button class="exit-fs" onclick="toggleFullscreen()">Exit Fullscreen (Esc)</button>
+
     <script>
+        const totalSlides = {{ visible_slides|length }};
         let currentIdx = 0;
-        const slides = document.querySelectorAll('.slide');
-        const totalSlides = slides.length;
-        let timerStart = Date.now();
-        let timerDuration = 35000; // 35s default
-        let timerPaused = false;
 
         function showSlide(idx) {
             if (idx < 0 || idx >= totalSlides) return;
-            slides.forEach(s => s.classList.remove('active'));
-            slides[idx].classList.add('active');
+            document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            const slideEl = document.getElementById('slide-' + idx);
+            const tabEl = document.querySelector('.tab[data-idx="' + idx + '"]');
+            if (slideEl) slideEl.classList.add('active');
+            if (tabEl) { tabEl.classList.add('active'); tabEl.scrollIntoView({block:'nearest', inline:'center'}); }
             currentIdx = idx;
             document.getElementById('currentIdx').innerText = idx + 1;
-            
-            // Reset timer for member cards
-            if (slides[idx].innerHTML.includes('member-card-layout')) {
-                startTimer(35000);
-            } else {
-                stopTimer();
+        }
+        function nextSlide() { showSlide(currentIdx + 1); }
+        function prevSlide() { showSlide(currentIdx - 1); }
+        function goToSlide(i) { showSlide(i); }
+
+        function toggleFullscreen() {
+            document.body.classList.toggle('fullscreen');
+            const fs = document.fullscreenElement;
+            if (!fs && document.body.classList.contains('fullscreen')) {
+                document.documentElement.requestFullscreen?.();
+            } else if (fs) {
+                document.exitFullscreen?.();
             }
         }
 
-        function startTimer(duration) {
-            timerDuration = duration;
-            timerStart = Date.now();
-            timerPaused = false;
-        }
-
-        function stopTimer() {
-            document.getElementById('timer-bar').style.width = '0%';
-            timerPaused = true;
-        }
-
-        // Timer Loop
-        setInterval(() => {
-            if (timerPaused) return;
-            const elapsed = Date.now() - timerStart;
-            const progress = Math.min((elapsed / timerDuration) * 100, 100);
-            document.getElementById('timer-bar').style.width = progress + '%';
-            
-            if (progress >= 100) {
-                // Auto advance? (optional)
-            }
-        }, 100);
-
-        // Controls
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowRight' || e.key === ' ') showSlide(currentIdx + 1);
-            if (e.key === 'ArrowLeft') showSlide(currentIdx - 1);
-            if (e.key === 'f') {
-                if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-                else document.exitFullscreen();
-            }
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') { nextSlide(); e.preventDefault(); }
+            if (e.key === 'ArrowLeft') prevSlide();
+            if (e.key === 'Escape') document.body.classList.remove('fullscreen');
+            if (e.key === 'f') toggleFullscreen();
         });
 
-        // Remote Polling
+        // 5s polling for state sync (admin-driven)
         async function pollState() {
             try {
-                const res = await fetch(`/api/presenter/{{ meeting.id }}/state`);
+                const res = await fetch('/api/presenter/{{ meeting.id }}/state');
                 const state = await res.json();
                 if (state.current_slide_index !== undefined && state.current_slide_index !== currentIdx) {
                     showSlide(state.current_slide_index);
